@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0007 — The Weight of Looking</title>
+<style>
+  :root{color-scheme:light;background:#eee9df}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eee9df}
+  body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:default}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+  #veil{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 48% 46%,rgba(255,255,255,.16),transparent 48%),linear-gradient(180deg,rgba(255,255,255,.08),rgba(54,45,36,.025));mix-blend-mode:soft-light}
+</style>
+</head>
+<body aria-label="The Weight of Looking. A field of fine horizontal strands that bends away from the pointer and briefly remembers clicks as fading absences.">
+<canvas id="art"></canvas><div id="veil"></div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+let W=1,H=1,D=1,raf=0,last=performance.now();
+const pointer={x:.5,y:.5,tx:.5,ty:.5,inside:false};
+const memories=[];
+const MAX_MEMORIES=4;
+const MEMORY_MS=5200;
+const STRANDS=91;
+
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function damp(v,target,dt,k){return v+(target-v)*(1-Math.exp(-k*dt))}
+function hash(n){n=Math.imul(n^n>>>16,0x45d9f3b);n=Math.imul(n^n>>>16,0x45d9f3b);return((n^n>>>16)>>>0)/4294967295}
+function still(){return Math.abs(pointer.x-pointer.tx)<.0002&&Math.abs(pointer.y-pointer.ty)<.0002&&memories.length===0}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function resize(){
+  W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);D=Math.min(devicePixelRatio||1,1.75);
+  canvas.width=Math.floor(W*D);canvas.height=Math.floor(H*D);ctx.setTransform(D,0,0,D,0,0);
+  draw(performance.now());
+}
+function influence(x,y,cx,cy,strength,radius){
+  const dx=x-cx,dy=y-cy;
+  const q=(dx*dx+dy*dy)/(radius*radius);
+  if(q>5.5)return [0,0];
+  const fall=Math.exp(-q*1.05);
+  const mag=strength*fall;
+  const len=Math.sqrt(dx*dx+dy*dy+180);
+  return [dx/len*mag,dy/len*mag];
+}
+function displacement(x,y,now){
+  let ox=0,oy=0;
+  const px=pointer.x*W,py=pointer.y*H;
+  const pr=Math.min(W,H)*.22;
+  const p=influence(x,y,px,py,pointer.inside?22:0,pr);
+  ox+=p[0];oy+=p[1];
+  for(const m of memories){
+    const age=now-m.born;
+    if(age<0||age>MEMORY_MS)continue;
+    const t=age/MEMORY_MS;
+    const strength=36*Math.pow(1-t,1.7)*(0.78+0.22*Math.cos(t*Math.PI*2));
+    const radius=Math.min(W,H)*(.12+.12*t);
+    const d=influence(x,y,m.x,m.y,strength,radius);
+    ox+=d[0];oy+=d[1];
+  }
+  return [ox,oy];
+}
+function baseY(i,x){
+  const top=H*.07,bottom=H*.93;
+  const y=top+(bottom-top)*(i/(STRANDS-1));
+  const a=1.1+1.2*hash(i*97+13);
+  return y+Math.sin(x*.0107+i*.41)*a+Math.sin(x*.026+i*1.17)*.52;
+}
+function draw(now){
+  ctx.globalAlpha=1;ctx.fillStyle='#eee9df';ctx.fillRect(0,0,W,H);
+  const step=clamp(W/96,9,15);
+  for(let i=0;i<STRANDS;i++){
+    const seam=(i===Math.floor(STRANDS*.53));
+    ctx.beginPath();
+    for(let x=-step;x<=W+step;x+=step){
+      const y=baseY(i,x);
+      const d=displacement(x,y,now);
+      const xx=x+d[0]*.38, yy=y+d[1];
+      if(x<0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);
+    }
+    const jitter=.16*hash(i*271+9);
+    ctx.globalAlpha=seam?.68:.20+jitter;
+    ctx.strokeStyle=seam?'#9a5946':'#24272a';
+    ctx.lineWidth=seam?.82:.42;
+    ctx.stroke();
+  }
+
+  // Sparse registration marks: stable points that reveal how much the field moves.
+  ctx.globalAlpha=.34;ctx.fillStyle='#24272a';
+  const marks=[[.18,.23],[.79,.31],[.27,.73],[.72,.78]];
+  for(let i=0;i<marks.length;i++){
+    const x=marks[i][0]*W,y=marks[i][1]*H;
+    ctx.beginPath();ctx.arc(x,y,1.1+(i%2)*.25,0,Math.PI*2);ctx.fill();
+  }
+}
+function frame(now){
+  raf=0;
+  const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  pointer.x=damp(pointer.x,pointer.tx,dt,8.5);pointer.y=damp(pointer.y,pointer.ty,dt,8.5);
+  for(let i=memories.length-1;i>=0;i--)if(now-memories[i].born>MEMORY_MS)memories.splice(i,1);
+  draw(now);
+  if(!still())raf=requestAnimationFrame(frame);
+}
+function addMemory(x,y){
+  if(memories.length>=MAX_MEMORIES)memories.shift();
+  memories.push({x,y,born:performance.now()});
+  wake();
+}
+addEventListener('pointermove',e=>{
+  pointer.tx=clamp(e.clientX/W,0,1);pointer.ty=clamp(e.clientY/H,0,1);pointer.inside=true;wake();
+},{passive:true});
+addEventListener('pointerdown',e=>{
+  if(e.button!==undefined&&e.button!==0)return;
+  pointer.tx=clamp(e.clientX/W,0,1);pointer.ty=clamp(e.clientY/H,0,1);pointer.inside=true;
+  addMemory(e.clientX,e.clientY);
+},{passive:true});
+addEventListener('pointerleave',()=>{pointer.inside=false;pointer.tx=.5;pointer.ty=.5;wake()},{passive:true});
+addEventListener('resize',()=>{resize();wake()},{passive:true});
+resize();
+})();
+</script>
+</body>
+</html>
