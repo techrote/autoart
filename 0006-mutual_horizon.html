@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0006 — Mutual Horizon</title>
+<style>
+  :root{color-scheme:dark;background:#111518}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111518}
+  body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:radial-gradient(rgba(255,255,255,.22) .45px,transparent .55px);background-size:7px 7px;mix-blend-mode:soft-light}
+</style>
+</head>
+<body aria-label="Mutual Horizon. An ambiguous field of folded planes that subtly reorganises around the pointer.">
+<canvas id="art"></canvas><div class="grain"></div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+let W=1,H=1,D=1,raf=0,last=performance.now();
+let pointer={x:.5,y:.5,tx:.5,ty:.5,active:false};
+const echoes=[];
+const MAX_ECHOES=6;
+const base=[];
+
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function ease(v,target,dt,k){return v+(target-v)*(1-Math.exp(-k*dt))}
+function resize(){
+ W=Math.max(1,innerWidth); H=Math.max(1,innerHeight); D=Math.min(devicePixelRatio||1,1.75);
+ canvas.width=Math.floor(W*D); canvas.height=Math.floor(H*D); ctx.setTransform(D,0,0,D,0,0);
+ build();
+}
+function build(){
+ base.length=0;
+ const cols=W<620?7:11, rows=W<620?11:7;
+ const sx=W/(cols+2), sy=H/(rows+2), s=Math.min(sx,sy)*.54;
+ for(let j=0;j<rows;j++) for(let i=0;i<cols;i++){
+   const x=sx*(i+1.5)+(j%2)*sx*.34;
+   const y=sy*(j+1.5);
+   if(x>W-sx*.55) continue;
+   const n=i+j*cols;
+   base.push({x,y,s,phase:((n*37)%101)/101*Math.PI*2,bias:((n*53)%97)/97});
+ }
+}
+function pulseAt(x,y,now){
+ if(echoes.length>=MAX_ECHOES) echoes.shift();
+ echoes.push({x,y,born:now});
+}
+function localInfluence(x,y,now){
+ let v=0;
+ for(const e of echoes){
+   const age=(now-e.born)/1000; if(age<0||age>3.8) continue;
+   const dx=x-e.x,dy=y-e.y,dist=Math.hypot(dx,dy);
+   const ring=Math.exp(-Math.pow((dist-age*190)/85,2));
+   v+=ring*Math.sin(age*7.2)*Math.exp(-age*.45);
+ }
+ return v;
+}
+function polygon(points,fill,alpha=1){
+ ctx.beginPath(); ctx.moveTo(points[0][0],points[0][1]);
+ for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);
+ ctx.closePath(); ctx.globalAlpha=alpha; ctx.fillStyle=fill; ctx.fill();
+}
+function drawUnit(u,now){
+ const px=pointer.x*W,py=pointer.y*H;
+ const dx=(px-u.x)/Math.max(W,H),dy=(py-u.y)/Math.max(W,H);
+ const d=Math.hypot(px-u.x,py-u.y);
+ const reach=Math.max(W,H)*.34;
+ const near=Math.exp(-(d*d)/(reach*reach));
+ const echo=localInfluence(u.x,u.y,now);
+ const drift=Math.sin(now*.00018+u.phase)*.025;
+ const tilt=clamp((dx-dy)*near*.72 + echo*.28 + drift,-.62,.62);
+ const flip=Math.sin((u.bias-.5)*5.8 + tilt*3.8);
+ const s=u.s, h=s*.82;
+ const cx=u.x+tilt*s*.16, cy=u.y-tilt*s*.08;
+ const top=[cx,cy-h];
+ const left=[cx-s,cy-h*.22];
+ const right=[cx+s,cy-h*.22];
+ const bottom=[cx,cy+h];
+ const midL=[cx-s*.08,cy], midR=[cx+s*.08,cy];
+ const warm=flip>0;
+ const a=warm?'#d7d2c7':'#5f696b';
+ const b=warm?'#768084':'#d9d3c6';
+ const c='#252c2e';
+ polygon([top,right,midR,[cx,cy]],a,.96);
+ polygon([[cx,cy],midR,bottom,midL],b,.94);
+ polygon([left,top,[cx,cy],midL],c,.98);
+ ctx.globalAlpha=.22+.23*near;
+ ctx.strokeStyle='#e8e3d8';ctx.lineWidth=.55;
+ ctx.beginPath();ctx.moveTo(left[0],left[1]);ctx.lineTo(top[0],top[1]);ctx.lineTo(right[0],right[1]);ctx.stroke();
+}
+function render(now){
+ const dt=Math.min(.05,(now-last)/1000||0); last=now;
+ pointer.x=ease(pointer.x,pointer.tx,dt,7.5); pointer.y=ease(pointer.y,pointer.ty,dt,7.5);
+ ctx.globalAlpha=1;ctx.fillStyle='#111518';ctx.fillRect(0,0,W,H);
+ const g=ctx.createRadialGradient(pointer.x*W,pointer.y*H,0,pointer.x*W,pointer.y*H,Math.max(W,H)*.62);
+ g.addColorStop(0,'rgba(121,101,81,.11)');g.addColorStop(1,'rgba(17,21,24,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(const u of base) drawUnit(u,now);
+ for(let i=echoes.length-1;i>=0;i--){if(now-echoes[i].born>3900)echoes.splice(i,1)}
+ // quiet witness: never sits exactly under the pointer
+ const wx=W*(.5-(pointer.x-.5)*.055), wy=H*(.5-(pointer.y-.5)*.055);
+ ctx.globalAlpha=.72;ctx.fillStyle='#c56f50';ctx.beginPath();ctx.arc(wx,wy,2.2,0,Math.PI*2);ctx.fill();
+ ctx.globalAlpha=.22;ctx.strokeStyle='#c56f50';ctx.lineWidth=.7;ctx.beginPath();ctx.arc(wx,wy,10.5,0,Math.PI*2);ctx.stroke();
+ raf=requestAnimationFrame(render);
+}
+addEventListener('pointermove',e=>{pointer.tx=clamp(e.clientX/W,0,1);pointer.ty=clamp(e.clientY/H,0,1);pointer.active=true},{passive:true});
+addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;pointer.tx=clamp(e.clientX/W,0,1);pointer.ty=clamp(e.clientY/H,0,1);pulseAt(e.clientX,e.clientY,performance.now())},{passive:true});
+addEventListener('pointerleave',()=>{pointer.tx=.5;pointer.ty=.5;pointer.active=false},{passive:true});
+addEventListener('resize',resize,{passive:true});
+resize();raf=requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
