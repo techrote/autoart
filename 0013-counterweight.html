@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0013 — Counterweight</title>
+<style>
+:root{color-scheme:light;background:#f2eee4}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f2eee4}
+body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:default}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+</style>
+</head>
+<body aria-label="Counterweight. A dense cluster occupies one side of a nearly empty field; pointer position subtly shifts its internal balance and clicks temporarily transfer visual mass to the opposite side.">
+<canvas id="art"></canvas>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const BG='#f2eee4';
+const INK='#26323a';
+const COLORS=['#283a48','#395765','#b9654b','#d28d52','#c7a65a','#718579','#9a6e62','#5c7280'];
+const TRANSFER_MS=4200;
+const pieces=[
+  [-.18,-.19,.33,.065,-.16,0,1.00],[-.09,-.13,.30,.082,.08,2,.94],[.00,-.08,.37,.055,-.04,1,.97],
+  [-.16,-.035,.24,.092,.15,4,.91],[-.025,.015,.32,.070,-.09,3,.97],[-.13,.085,.36,.060,.045,0,.93],
+  [.015,.135,.26,.085,-.14,6,.90],[-.18,.175,.29,.052,.10,5,.90],[-.03,.205,.22,.062,-.02,2,.92],
+  [-.215,.035,.115,.115,.13,7,.88],[.105,-.17,.085,.085,-.08,3,.88],[-.105,-.235,.155,.038,.04,5,.78]
+];
+let W=1,H=1,DPR=1,S=1,raf=0,last=performance.now();
+const pointer={x:.5,y:.5,tx:.5,ty:.5,strength:0,target:0};
+let transfer=null;
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function smooth(t){t=clamp(t,0,1);return t*t*(3-2*t)}
+function damp(a,b,dt,k){return a+(b-a)*(1-Math.exp(-k*dt))}
+function roundRect(x,y,w,h,r){r=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function resize(){W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);DPR=Math.min(devicePixelRatio||1,1.8);S=Math.min(W,H);canvas.width=Math.max(1,Math.floor(W*DPR));canvas.height=Math.max(1,Math.floor(H*DPR));ctx.setTransform(DPR,0,0,DPR,0,0);render(performance.now())}
+function transferAmount(now){if(!transfer)return 0;const age=now-transfer.born;if(age>=TRANSFER_MS){transfer=null;return 0}const t=age/TRANSFER_MS;return Math.sin(Math.PI*t)*(.92-.12*t)}
+function pieceTransform(p,i,cx,cy,side,amt){
+  const [dx,dy,w,h,a,col,op]=p;
+  const px=(pointer.x-.5),py=(pointer.y-.5);
+  const depth=((i%5)-2)/2;
+  const par=pointer.strength*(2.2+Math.abs(depth)*2.4);
+  const driftX=px*par*depth*side;
+  const driftY=py*par*(1-depth*.22);
+  const bias=amt*side;
+  return {x:cx+dx*S*side+driftX,y:cy+dy*S+driftY,w:w*S,h:h*S,a:a*side + bias*.035*(i%2?1:-1),col,op};
+}
+function drawPiece(t,alpha,scale=1){
+  ctx.save();ctx.translate(t.x,t.y);ctx.rotate(t.a);ctx.scale(scale,scale);
+  const w=t.w,h=t.h,x=-w/2,y=-h/2,r=Math.min(w,h)*.38;
+  ctx.globalAlpha=alpha*.12;ctx.fillStyle='#3d342f';roundRect(x+3,y+4,w,h,r);ctx.fill();
+  ctx.globalAlpha=alpha*t.op;ctx.fillStyle=COLORS[t.col];roundRect(x,y,w,h,r);ctx.fill();
+  ctx.globalAlpha=alpha*.18;ctx.strokeStyle='#fff9ed';ctx.lineWidth=.8;roundRect(x+.5,y+.5,w-1,h-1,Math.max(1,r-.5));ctx.stroke();
+  ctx.restore();
+}
+function drawThread(leftX,leftY,rightX,rightY,amt){
+  const py=(pointer.y-.5);
+  const sag=S*(.018 + py*.016*pointer.strength);
+  ctx.save();ctx.globalAlpha=.10+.08*amt;ctx.strokeStyle=INK;ctx.lineWidth=.7+amt*.35;
+  ctx.beginPath();ctx.moveTo(leftX+S*.11,leftY);ctx.bezierCurveTo(W*.42,H*.49+sag,W*.66,H*.51-sag,rightX-S*.012,rightY);ctx.stroke();ctx.restore();
+}
+function drawMass(now){
+  const amt=transferAmount(now);
+  const leftX=W*.18,leftY=H*.52;
+  const rightX=W*.835,rightY=H*.475;
+  drawThread(leftX,leftY,rightX,rightY,amt);
+  const leftScale=1-amt*.14;
+  const leftAlpha=1-amt*.42;
+  for(let i=0;i<pieces.length;i++) drawPiece(pieceTransform(pieces[i],i,leftX,leftY,1,amt),leftAlpha,leftScale);
+  ctx.save();ctx.globalAlpha=.86*(1-amt*.25);ctx.fillStyle=INK;ctx.beginPath();ctx.arc(leftX-S*.015,leftY+S*.012,Math.max(2,S*.012)*(1-amt*.08),0,Math.PI*2);ctx.fill();ctx.restore();
+  const px=(pointer.x-.5),py=(pointer.y-.5);
+  const counterX=rightX-px*S*.018*pointer.strength;
+  const counterY=rightY-py*S*.018*pointer.strength;
+  if(amt>0){
+    const orient=transfer?transfer.bias:0;
+    ctx.save();ctx.translate(counterX,counterY);ctx.rotate(orient*.22);
+    for(let i=pieces.length-1;i>=0;i--){
+      const p=pieces[i], q=[p[0]*.86,p[1]*.86,p[2],p[3],-p[4],p[5],p[6]];
+      const tt=pieceTransform(q,i,0,0,-1,amt);
+      drawPiece(tt,amt*.82,.18+amt*.72);
+    }
+    ctx.restore();
+  }
+  ctx.save();ctx.fillStyle=INK;ctx.globalAlpha=.92;ctx.translate(counterX,counterY);ctx.rotate(Math.PI/4 + (pointer.y-.5)*.16*pointer.strength);const d=S*(.010+amt*.004);ctx.fillRect(-d/2,-d/2,d,d);ctx.restore();
+  ctx.save();ctx.fillStyle=INK;ctx.globalAlpha=.11;ctx.fillRect(W*.54,H*.255,1.1,1.1);ctx.fillRect(W*.63,H*.735,1.1,1.1);ctx.restore();
+}
+function render(now){ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);drawMass(now)}
+function settled(){return Math.abs(pointer.x-pointer.tx)<.0004&&Math.abs(pointer.y-pointer.ty)<.0004&&Math.abs(pointer.strength-pointer.target)<.002}
+function frame(now){raf=0;const dt=Math.min(.05,(now-last)/1000||0);last=now;const k=reduced?20:10;pointer.x=damp(pointer.x,pointer.tx,dt,k);pointer.y=damp(pointer.y,pointer.ty,dt,k);pointer.strength=damp(pointer.strength,pointer.target,dt,k);const active=transfer&&now-transfer.born<TRANSFER_MS;render(now);if(!settled()||active)raf=requestAnimationFrame(frame)}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function pos(e){return{x:clamp(e.clientX/Math.max(1,W),0,1),y:clamp(e.clientY/Math.max(1,H),0,1)}}
+addEventListener('pointermove',e=>{const p=pos(e);pointer.tx=p.x;pointer.ty=p.y;pointer.target=1;wake()},{passive:true});
+addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;const p=pos(e);pointer.tx=p.x;pointer.ty=p.y;pointer.target=1;transfer={born:performance.now(),bias:(p.y-.5)*2};wake()},{passive:true});
+document.documentElement.addEventListener('pointerleave',()=>{pointer.target=0;wake()},{passive:true});
+addEventListener('resize',()=>{resize();wake()},{passive:true});
+resize();
+})();
+</script>
+</body>
+</html>

@@ -4,19 +4,42 @@ This file is the execution authority for autonomous work in `techrote/autoart`.
 
 AUTOART is a sequential art practice, not a software feature backlog. The repository provides a strict publication format and a review ritual; it does **not** prescribe a house aesthetic.
 
+
 ## Core invariant
 
-One normal run creates at most:
+AUTOART is an accumulating anthology organised into numbered **publication slots**. Most slots contain one piece. A slot may contain multiple sibling variants when independent agents began from the same published frontier and produced distinct valid work.
 
-- one critique of the previous/latest piece, when that critique is missing;
-- one new numbered `.html` artwork;
-- one matching numbered `.md` note.
+One normal creative run creates at most:
 
-Routine runs should not modify older artwork, older notes, existing critiques, `README.md`, or this file.
+- critique(s) required for the selected predecessor piece(s), when missing;
+- one new artwork `.html` file;
+- one matching artwork `.md` note.
+
+A collision-recovery run may instead preserve an already-created concurrent critique or artwork under the documented variant naming rules. Valid generated art and valid independent reviews must not be discarded merely because another agent published first.
+
+Routine runs should not otherwise modify older artwork, older notes, existing critiques, `README.md`, or this file.
+
 
 ## Determine the current sequence
 
-Inspect the repository root before making changes.
+Establish the current authoritative `main` state before making creative changes. Do not infer the current corpus solely from the branch or worktree that happens to be checked out.
+
+A **publication slot** is the four-digit numeric prefix:
+
+```text
+####
+```
+
+A **piece id** is that slot plus an optional lowercase variant suffix:
+
+```text
+####
+####a
+####b
+...
+```
+
+If more than 26 variants are ever needed, continue with `aa`, `ab`, and so on rather than changing the slot number.
 
 A **complete piece** is a matching pair:
 
@@ -25,23 +48,50 @@ A **complete piece** is a matching pair:
 ####-piece_name.md
 ```
 
-Ignore `-critique.md` files when determining piece numbers.
+or, for a sibling variant:
 
-The latest piece is the complete pair with the highest four-digit prefix.
+```text
+####a-piece_name.html
+####a-piece_name.md
+```
 
-The next piece number is latest + 1, zero-padded to four digits.
+Ignore critique files when determining slots and piece ids.
 
-If a number is represented by only one half of the required pair, treat the repository as inconsistent. Investigate before publishing another number; do not guess around the collision.
+The **highest slot** is the largest four-digit numeric prefix represented by a complete piece, ignoring variant suffixes.
 
-Do not reuse numbers. Do not renumber history. If `9999` is ever reached, stop and report the naming-boundary problem rather than silently changing the scheme.
+The **frontier set** is every complete piece in the highest slot, including the unsuffixed piece and any suffixed sibling variants.
+
+The next ordinary slot is highest slot + 1, zero-padded to four digits. The first publication in that slot uses the unsuffixed id.
+
+If independent work intended for that same slot is published later because another agent won the publication race, preserve the later work in the **same slot** using the next available variant suffix. Do not discard it and do not silently move it to the next numeric slot, because doing so would falsify its historical starting point.
+
+If a piece id is represented by only one half of the required HTML/Markdown pair, treat the repository as inconsistent. Investigate before publishing another piece; do not guess around the collision.
+
+Do not renumber published history. If numeric slot `9999` is ever reached, stop and report the naming-boundary problem rather than silently changing the scheme.
+
 
 ## Choose the critique target
 
-Normally the critique target is the highest-numbered complete piece.
+Normally, when the frontier set contains one piece, that piece is the critique target and artistic predecessor.
 
-If its matching `####-piece_name-critique.md` does not exist, create it during this run.
+When the frontier set contains multiple sibling pieces, inspect all of them and their existing critiques before choosing the lineage for the next work. The agent may choose:
 
-If the latest piece already has a critique, read that critique but do not overwrite it or create a second critique. Proceed to creation of the next piece.
+- one frontier piece as its predecessor; or
+- two or more frontier pieces as joint predecessors.
+
+Record that choice explicitly in the new piece's companion note.
+
+For each selected predecessor that has no critique, create a critique during this run when practical.
+
+A normal run does not create a second critique merely because it disagrees with an existing one. However, if a distinct critique was already produced independently in a concurrent run before the agent could observe the first publication, preserve it rather than discard it:
+
+```text
+####-piece_name-critique.md
+####-piece_name-critique-a.md
+####-piece_name-critique-b.md
+```
+
+The first published critique keeps the unsuffixed `-critique.md` filename. Later concurrent reviews use the next available suffix.
 
 A new piece created during the current run does **not** receive a critique during the same run. It should remain available for a later agent to encounter as finished work.
 
@@ -56,8 +106,8 @@ At minimum:
 - enumerate all numbered pieces and critiques;
 - read every existing piece-note `.md`;
 - read every existing `-critique.md`;
-- inspect the source of the latest piece;
-- actually render and interact with the latest piece in a browser when the available environment permits it.
+- inspect the source of the selected frontier predecessor piece(s);
+- actually render and interact with the relevant frontier piece(s) in a browser when the available environment permits it.
 
 Do not claim visual, temporal or interactive observations that were inferred only from prose or source code if you did not actually observe them.
 
@@ -67,7 +117,7 @@ Other `techrote` repositories may be inspected for inspiration when that genuine
 
 ## Write the critique
 
-The critique filename is the exact target stem plus `-critique.md`.
+The ordinary critique filename is the exact target stem plus `-critique.md`. A preserved concurrent duplicate review adds the next available suffix after `critique`.
 
 Example:
 
@@ -75,7 +125,10 @@ Example:
 0007-signal_garden.html
 0007-signal_garden.md
 0007-signal_garden-critique.md
+0007-signal_garden-critique-a.md
 ```
+
+Critique suffixes are collision-preservation metadata, not invitations to generate redundant reviews during ordinary runs.
 
 The critique should be specific to the encountered work rather than a generic design review.
 
@@ -136,22 +189,30 @@ There is no preferred choice.
 
 Record the chosen priority and the relationship decision in the new piece's Markdown note.
 
+
 ## Name the new piece
 
 Choose a short title that belongs to the work rather than describing its implementation.
 
 Convert it to lowercase snake_case for the filename.
 
-Required pair:
+Ordinary required pair:
 
 ```text
 ####-piece_name.html
 ####-piece_name.md
 ```
 
-The visible title inside the artwork may use ordinary capitalization and punctuation.
+Preserved concurrent sibling:
 
-Before writing, verify that neither required filename already exists.
+```text
+####a-piece_name.html
+####a-piece_name.md
+```
+
+The visible title inside the artwork may use ordinary capitalization and punctuation, but its displayed AUTOART id should match the published piece id.
+
+Before writing, verify that neither required filename already exists. Immediately before publication, re-check authoritative `main`; if the intended ordinary slot was claimed by genuinely concurrent work, convert this run to the next available sibling variant in the same slot and preserve its original artistic provenance.
 
 ## Create single-file HTML art
 
@@ -194,6 +255,7 @@ Include, as applicable:
 - title and sequence number;
 - the dominant artistic priority selected for this run;
 - whether the work is derivative, oppositional, hybrid or independent, and why;
+- its selected predecessor lineage; when the frontier had sibling variants, state whether the work responds to one named sibling or to several;
 - the concept or intent;
 - important influences from the AUTOART corpus or elsewhere;
 - the relationship between mechanism and aesthetic effect;
@@ -225,7 +287,30 @@ For shader/API-specific work, test the actual path used by the piece rather than
 
 If full browser validation is genuinely unavailable, perform the strongest static checks available and state the limitation accurately in the piece note and final report. Do not claim tests you did not run.
 
+
 ## Repository workflow
+
+### Publication continuity gate
+
+Start every invocation by checking:
+
+- current authoritative `main`;
+- open AUTOART pull requests;
+- relevant `art/*` branches;
+- whether a previous completed iteration exists outside `main` because publication was blocked.
+
+A previously completed but unpublished iteration is **not** permission to continue making an arbitrarily long unpublished sequence.
+
+If completed AUTOART work exists outside `main` because PR creation, merge, repository permissions, connector safety policy, or another publication mechanism blocked it:
+
+1. preserve the completed branch and exact commit;
+2. attempt to reconcile or publish that existing work before creating new art;
+3. do **not** create another ordinary sequential artwork merely by continuing from the unpublished branch;
+4. if publication remains blocked, report the exact blocker and stop the run without advancing the artistic sequence.
+
+This gate does not invalidate genuine concurrency. If multiple agents independently began from the same published frontier before any could observe the others, preserve every valid result using the sibling-variant and duplicate-critique rules.
+
+### Normal creative publication
 
 Prefer a clean branch for each iteration:
 
@@ -233,33 +318,39 @@ Prefer a clean branch for each iteration:
 art/####-piece_name
 ```
 
-A routine iteration should normally change exactly three files:
+If a publication collision is discovered later, the branch may be renamed/recreated for the corresponding variant, but preserving the committed artwork is more important than branch-name aesthetics.
+
+A routine iteration normally changes:
 
 ```text
-<previous-stem>-critique.md   # only if missing
+<selected-predecessor-stem>-critique.md   # only if missing
 ####-piece_name.html
 ####-piece_name.md
 ```
 
-If the latest piece already had a critique, the routine diff should contain only the new HTML/note pair.
+A run selecting multiple frontier predecessors may create more than one missing critique. A collision-recovery run may add suffixed critique or piece files instead.
 
 Do not rewrite prior artworks to implement critique suggestions. History is part of the project.
 
 Do not add build systems, package manifests, frameworks, generated screenshots, lockfiles or dependency trees merely to support development. Temporary validation artifacts must not be committed unless they are intentionally part of the artwork.
 
-If repository permissions and the execution environment support it:
+Publication procedure:
 
-1. create the branch from current authoritative `main`;
-2. add the critique and new piece;
-3. validate the exact branch contents;
-4. inspect the final diff for accidental files;
-5. open a pull request;
-6. merge only after relevant automated checks and the manual validation gate are satisfied;
-7. verify the merge landed on `main`.
+1. establish current authoritative `main` and pass the publication continuity gate;
+2. create the branch from that published frontier;
+3. review the frontier and create the required critique(s), new piece and note;
+4. validate the exact branch contents;
+5. re-check authoritative `main` immediately before publication;
+6. if the intended ordinary slot is still free, publish normally;
+7. if genuinely concurrent work has claimed that slot, preserve this run under the next available variant suffix in the **same slot**, preserve any concurrently-created duplicate critique under the next available critique suffix, and revalidate the exact final files;
+8. inspect the final diff for accidental files;
+9. open a pull request;
+10. merge only after relevant automated checks and the manual validation gate are satisfied;
+11. verify the intended files and resulting commit actually landed on `main`.
 
 If there are no automated checks, that absence is not an excuse to skip the validation gate.
 
-If blocked by a genuine repository, browser or permissions problem, preserve accurate work/evidence and report the blocker. Do not invent a successful render, merge or validation.
+If publication is blocked by a genuine repository/tool/permissions problem, preserve accurate work/evidence and report the blocker. Do not invent a successful PR, render, merge or validation. A later recurring invocation must attempt publication recovery before creating further art.
 
 ## What not to optimize for
 
@@ -277,13 +368,17 @@ Each numbered HTML file should stand as an artwork in its own right.
 
 ## Completion report
 
-At the end of a successful run, report succinctly:
+At the end of a run, report succinctly:
 
-- critique created or already present;
-- new piece number, title and filenames;
+- publication state found at the beginning;
+- any pending work recovered or published;
+- selected predecessor piece(s);
+- critique(s) created, preserved as concurrent variants, or already present;
+- new piece id/variant, title and filenames, if a new creative iteration was permitted;
 - the dominant artistic priority;
 - whether the new work is derivative/oppositional/hybrid/independent;
 - validation performed;
-- PR/merge status and resulting main commit when applicable.
+- exact branch/commit;
+- PR/merge status and resulting main commit, or the exact publication blocker.
 
 Do not reveal hidden chain-of-thought in the completion report.

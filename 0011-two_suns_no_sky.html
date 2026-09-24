@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0011 — Two Suns, No Sky</title>
+<style>
+  :root{color-scheme:light;background:#e7decf}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#e7decf}
+  body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:default}
+  svg{position:fixed;inset:0;width:100%;height:100%;display:block}
+</style>
+</head>
+<body aria-label="Two Suns, No Sky. A layered paper collage whose shadows pivot with pointer position; a click creates one temporary contradictory second shadow.">
+<svg id="art" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="title desc">
+  <title id="title">AUTOART 0011 — Two Suns, No Sky</title>
+  <desc id="desc">Flat coloured paper-like forms remain still while their shadows respond to pointer position. Clicking briefly adds a second incompatible shadow direction.</desc>
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eee6d8"/>
+      <stop offset=".58" stop-color="#e7decf"/>
+      <stop offset="1" stop-color="#ded2c0"/>
+    </linearGradient>
+    <filter id="softShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="6.5"/>
+    </filter>
+    <filter id="echoBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+
+    <path id="s1" d="M184 166 C244 115 336 119 389 171 C425 206 420 263 377 293 C325 330 239 318 195 276 C160 242 151 195 184 166 Z"/>
+    <path id="s2" d="M454 113 C514 86 588 102 624 151 C653 191 640 238 602 266 C557 299 482 286 451 243 C421 202 418 143 454 113 Z"/>
+    <path id="s3" d="M718 137 C780 96 872 111 913 174 C944 222 921 281 864 304 C806 327 726 299 699 245 C678 203 684 160 718 137 Z"/>
+    <path id="s4" d="M906 291 C955 261 1025 273 1059 316 C1092 357 1085 414 1046 447 C1005 482 940 477 901 442 C862 407 862 318 906 291 Z"/>
+    <path id="s5" d="M699 411 C755 368 844 375 888 426 C929 474 913 540 864 574 C814 609 732 595 696 548 C661 503 660 442 699 411 Z"/>
+    <path id="s6" d="M438 472 C489 438 565 445 610 486 C654 526 651 592 606 628 C560 666 484 661 438 621 C397 585 395 500 438 472 Z"/>
+    <path id="s7" d="M211 424 C264 387 343 398 381 450 C416 498 397 560 350 590 C304 620 236 608 199 566 C163 526 169 453 211 424 Z"/>
+    <path id="s8" fill-rule="evenodd" d="M352 303 C399 267 473 269 519 305 C560 338 564 395 527 430 C485 470 408 472 360 435 C319 404 314 333 352 303 Z M401 339 C423 323 457 323 479 340 C499 355 501 381 484 398 C464 417 428 417 406 400 C387 385 384 351 401 339 Z"/>
+    <path id="s9" d="M582 281 C632 243 706 250 747 291 C783 328 779 378 745 411 C704 451 633 453 588 418 C545 385 544 309 582 281 Z"/>
+    <path id="s10" d="M815 604 C858 574 923 582 958 617 C989 648 985 693 955 722 C920 755 865 752 826 724 C789 697 780 628 815 604 Z"/>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#ground)"/>
+  <path d="M110 646 C348 607 560 688 1085 617" fill="none" stroke="#6d5f51" stroke-width="1" opacity=".08"/>
+  <path d="M131 154 C356 206 727 92 1080 177" fill="none" stroke="#6d5f51" stroke-width=".9" opacity=".07"/>
+
+  <g id="primaryShadow" fill="#302b28" opacity=".20" filter="url(#softShadow)" aria-hidden="true" transform="translate(18 22)">
+    <use href="#s1"/><use href="#s2"/><use href="#s3"/><use href="#s4"/><use href="#s5"/>
+    <use href="#s6"/><use href="#s7"/><use href="#s8"/><use href="#s9"/><use href="#s10"/>
+  </g>
+
+  <g id="echoShadow" fill="#30435d" opacity="0" filter="url(#echoBlur)" aria-hidden="true">
+    <use href="#s1"/><use href="#s2"/><use href="#s3"/><use href="#s4"/><use href="#s5"/>
+    <use href="#s6"/><use href="#s7"/><use href="#s8"/><use href="#s9"/><use href="#s10"/>
+  </g>
+
+  <g id="paper" stroke="#3a342f" stroke-width="1.05" stroke-opacity=".18" stroke-linejoin="round" aria-hidden="true">
+    <use href="#s1" fill="#315b87"/>
+    <use href="#s2" fill="#c76b52"/>
+    <use href="#s3" fill="#e2b354"/>
+    <use href="#s4" fill="#657b6b"/>
+    <use href="#s5" fill="#9d5366"/>
+    <use href="#s6" fill="#4d747b"/>
+    <use href="#s7" fill="#d98257"/>
+    <use href="#s8" fill="#f1e6c7"/>
+    <use href="#s9" fill="#b6c3c6"/>
+    <use href="#s10" fill="#303c43"/>
+  </g>
+
+  <g fill="#faf6ed" opacity=".32" aria-hidden="true">
+    <ellipse cx="292" cy="201" rx="42" ry="10" transform="rotate(-12 292 201)"/>
+    <ellipse cx="790" cy="172" rx="38" ry="9" transform="rotate(8 790 172)"/>
+    <ellipse cx="506" cy="503" rx="31" ry="8" transform="rotate(-7 506 503)"/>
+  </g>
+</svg>
+<script>
+(()=>{
+'use strict';
+const primary=document.getElementById('primaryShadow');
+const echo=document.getElementById('echoShadow');
+const root=document.documentElement;
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const REST={x:18,y:22};
+const state={x:REST.x,y:REST.y,tx:REST.x,ty:REST.y,inside:false,echo:null};
+const ECHO_MS=4800;
+let last=performance.now(),raf=0;
+
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function damp(v,t,dt,k){return v+(t-v)*(1-Math.exp(-k*dt))}
+function shadowFor(nx,ny,ax,ay,bx=0,by=0){
+  return {x:(.5-nx)*ax+bx,y:(.5-ny)*ay+by};
+}
+function setPrimaryTarget(nx,ny){
+  const q=shadowFor(nx,ny,58,46,5,7);
+  state.tx=q.x;state.ty=q.y;
+}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function render(now){
+  primary.setAttribute('transform',`translate(${state.x.toFixed(2)} ${state.y.toFixed(2)})`);
+  if(state.echo){
+    const age=now-state.echo.born;
+    const t=clamp(age/ECHO_MS,0,1);
+    const fade=Math.pow(1-t,1.35);
+    echo.setAttribute('transform',`translate(${state.echo.x.toFixed(2)} ${state.echo.y.toFixed(2)})`);
+    echo.setAttribute('opacity',(fade*.30).toFixed(3));
+    if(age>=ECHO_MS){state.echo=null;echo.setAttribute('opacity','0')}
+  }else echo.setAttribute('opacity','0');
+}
+function settled(){
+  return Math.abs(state.x-state.tx)<.03&&Math.abs(state.y-state.ty)<.03&&!state.echo;
+}
+function frame(now){
+  raf=0;
+  const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  const k=reduced?22:8.5;
+  state.x=damp(state.x,state.tx,dt,k);state.y=damp(state.y,state.ty,dt,k);
+  render(now);
+  if(!settled())raf=requestAnimationFrame(frame);
+}
+function pointerPos(e){
+  return {x:clamp(e.clientX/Math.max(1,innerWidth),0,1),y:clamp(e.clientY/Math.max(1,innerHeight),0,1)};
+}
+addEventListener('pointermove',e=>{
+  const p=pointerPos(e);state.inside=true;setPrimaryTarget(p.x,p.y);wake();
+},{passive:true});
+addEventListener('pointerdown',e=>{
+  if(e.button!==undefined&&e.button!==0)return;
+  const p=pointerPos(e);state.inside=true;setPrimaryTarget(p.x,p.y);
+  const q=shadowFor(p.x,p.y,86,66,-6,3);
+  state.echo={x:q.x,y:q.y,born:performance.now()};
+  wake();
+},{passive:true});
+root.addEventListener('pointerleave',()=>{
+  state.inside=false;state.tx=REST.x;state.ty=REST.y;wake();
+},{passive:true});
+addEventListener('resize',()=>wake(),{passive:true});
+render(performance.now());
+})();
+</script>
+</body>
+</html>
