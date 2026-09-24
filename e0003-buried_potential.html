@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART e0003 — Buried Potential</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html,body { margin:0; width:100%; height:100%; overflow:hidden; background:#020406; }
+  body { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; background:#020406; touch-action:none; }
+  #hud { position:fixed; left:14px; top:12px; pointer-events:none; color:rgba(218,232,232,.64); font-size:9px; letter-spacing:.09em; line-height:1.45; text-transform:uppercase; transition:opacity .2s ease; }
+  #hud b { color:rgba(239,247,246,.9); font-weight:600; }
+  #hud .dim { opacity:.46; }
+  #keys { position:fixed; right:13px; bottom:10px; pointer-events:none; color:rgba(207,224,222,.26); font-size:8px; letter-spacing:.06em; text-align:right; transition:opacity .2s ease; }
+  .off { opacity:0 !important; }
+  @media (max-width:640px) { #hud{left:8px;top:7px;font-size:7px} #keys{right:8px;bottom:6px;font-size:6px;max-width:72vw} }
+</style>
+</head>
+<body>
+<canvas id="art" aria-label="Animated generative artwork titled Buried Potential"></canvas>
+<div id="hud"><b>AUTOART e0003</b> // BURIED POTENTIAL<br><span class="dim" id="status">passive resistivity survey · seed E0003B17</span></div>
+<div id="keys">POINTER inject · CLICK electrode · SPACE hold · R reseed · H interface</div>
+<script>
+(() => {
+'use strict';
+
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+const residue=document.createElement('canvas');
+const rctx=residue.getContext('2d',{alpha:true});
+const hud=document.getElementById('hud'), keys=document.getElementById('keys'), status=document.getElementById('status');
+
+const BASE_SEED=0xE0003B17>>>0;
+const STEP=1/60, PARTICLE_CAP=920, ELECTRODE_CAP=4;
+let W=1,H=1,DPR=1,seed=BASE_SEED,rng=makeRng(seed),tick=0,last=performance.now(),acc=0,paused=false,showUI=true;
+let particles=[],strata=[],stations=[],electrodes=[],anomaly=[];
+let probe={x:0,y:0,active:false,strength:0};
+
+function makeRng(s){let a=s>>>0;return()=>{a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+function hash32(x){x=(x^(x>>>16))>>>0;x=Math.imul(x,0x7feb352d)>>>0;x=(x^(x>>>15))>>>0;x=Math.imul(x,0x846ca68b)>>>0;return(x^(x>>>16))>>>0;}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const mix=(a,b,t)=>a+(b-a)*t;
+function rand(a,b){return a+(b-a)*rng();}
+
+function resize(){
+  W=Math.max(1,innerWidth); H=Math.max(1,innerHeight); DPR=Math.min(devicePixelRatio||1,1.55);
+  const bw=Math.max(1,Math.floor(W*DPR)), bh=Math.max(1,Math.floor(H*DPR));
+  if(canvas.width===bw&&canvas.height===bh)return;
+  canvas.width=residue.width=bw; canvas.height=residue.height=bh;
+  ctx.setTransform(DPR,0,0,DPR,0,0); rctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.imageSmoothingEnabled=rctx.imageSmoothingEnabled=true;
+  rebuild();
+}
+
+function rebuild(){
+  rng=makeRng(seed); tick=0; electrodes=[]; probe.strength=0;
+  rctx.setTransform(1,0,0,1,0,0); rctx.clearRect(0,0,residue.width,residue.height); rctx.setTransform(DPR,0,0,DPR,0,0);
+  anomaly=makeAnomaly(); strata=makeStrata(); stations=makeStations();
+  const count=clamp(Math.floor(W*H/1180),480,PARTICLE_CAP);
+  particles=new Array(count); for(let i=0;i<count;i++)particles[i]=spawnParticle(i,true);
+  for(let i=0;i<170;i++)simulate();
+  updateStatus();
+}
+
+function makeAnomaly(){
+  const local=makeRng(hash32(seed^0xA0B1C2D3));
+  const cx=W*(.56+(local()-.5)*.035), cy=H*(.57+(local()-.5)*.025);
+  const rx=Math.min(W,H)*(.155+local()*.025), ry=Math.min(W,H)*(.09+local()*.018);
+  const pts=[]; const n=14;
+  for(let i=0;i<n;i++){
+    const a=i/n*Math.PI*2;
+    const wob=1+Math.sin(a*3+1.1)*.08+Math.sin(a*7+.4)*.035+(local()-.5)*.04;
+    pts.push({x:cx+Math.cos(a)*rx*wob,y:cy+Math.sin(a)*ry*wob*.98});
+  }
+  return pts;
+}
+function anomalyCenter(){let x=0,y=0;for(const p of anomaly){x+=p.x;y+=p.y;}return{x:x/anomaly.length,y:y/anomaly.length};}
+function anomalyMetric(x,y){
+  const c=anomalyCenter(); const sx=Math.min(W,H)*.17, sy=Math.min(W,H)*.105;
+  const dx=(x-c.x)/sx, dy=(y-c.y)/sy;
+  const a=Math.atan2(dy,dx), wob=1+.08*Math.sin(a*3+1.1)+.035*Math.sin(a*7+.4);
+  return Math.hypot(dx,dy)/wob;
+}
+function makeStrata(){
+  const local=makeRng(hash32(seed^0x571A7A)); const out=[]; const n=W<650?22:34;
+  for(let i=0;i<n;i++)out.push({y:(i+.45)/n*H,amp:H*(.004+local()*.012),phase:local()*6.283,freq:1.1+local()*2.6,salt:local(),tilt:(local()-.5)*H*.035});
+  return out;
+}
+function makeStations(){
+  const local=makeRng(hash32(seed^0x5A710A)); const n=W<650?7:11; const out=[];
+  for(let i=0;i<n;i++)out.push({x:W*(.07+i/(n-1)*.86)+(local()-.5)*W*.012,id:i,phase:local()*6.283,salt:local()});
+  return out;
+}
+function spawnParticle(id,initial=false){
+  let x,y; if(rng()<.72){x=rand(-20,W+20);y=rng()<.5?rand(-18,H*.28):rand(H*.73,H+18);}else{x=rng()<.5?rand(-18,W*.14):rand(W*.86,W+18);y=rand(-10,H+10);}
+  return{id,x,y,px:x,py:y,vx:rand(-.1,.1),vy:rand(-.1,.1),age:initial?Math.floor(rng()*700):0,life:Math.floor(rand(760,1900)),phase:rng()*6.283,salt:rng(),width:rand(.32,.9)};
+}
+
+function fieldAt(x,y,t,p){
+  const n1=Math.sin(x*.006+y*.004+t*.028+p.phase), n2=Math.cos(y*.009-x*.003-t*.019);
+  let fx=.34*Math.cos(n1*2.2)+.14*Math.sin(y*.005+t*.031), fy=.45+.2*Math.sin(n2*2.1);
+  const m=anomalyMetric(x,y);
+  const c=anomalyCenter(); const dx=x-c.x,dy=y-c.y,dist=Math.hypot(dx,dy)+.001;
+  const shell=Math.exp(-Math.pow((m-1.0)/.38,2));
+  fx+=(dx/dist)*shell*1.35 + (-dy/dist)*shell*.45;
+  fy+=(dy/dist)*shell*1.05 + ( dx/dist)*shell*.45;
+  if(m<.92){const push=(.92-m)*3.8;fx+=(dx/dist)*push;fy+=(dy/dist)*push;}
+  if(probe.strength>.002){
+    const px=x-probe.x,py=y-probe.y,d2=px*px+py*py+90,reach=Math.min(W,H)*.2,a=Math.exp(-d2/(reach*reach))*probe.strength,inv=1/Math.sqrt(d2);
+    fx+=(-py*inv)*a*2.0-(px*inv)*a*.3; fy+=(px*inv)*a*2.0-(py*inv)*a*.3;
+  }
+  for(const e of electrodes){
+    const ex=x-e.x,ey=y-e.y,d=Math.hypot(ex,ey)+.01,front=Math.exp(-Math.pow((d-e.r)/Math.max(16,e.r*.14),2))*e.life;
+    fx+=(ex/d)*front*1.8; fy+=(ey/d)*front*1.8;
+  }
+  return[fx,fy];
+}
+
+function simulate(){
+  const t=tick*STEP; probe.strength*=.973;
+  for(let i=electrodes.length-1;i>=0;i--){const e=electrodes[i];e.r+=1.35;e.life*=.987;if(e.life<.025||e.r>Math.max(W,H)*.62)electrodes.splice(i,1);}
+  rctx.save(); rctx.globalCompositeOperation='source-over'; rctx.fillStyle='rgba(2,4,6,.014)'; rctx.fillRect(0,0,W,H); rctx.globalCompositeOperation='lighter';
+  for(let i=0;i<particles.length;i++){
+    let p=particles[i];p.px=p.x;p.py=p.y;const f=fieldAt(p.x,p.y,t,p);p.vx=p.vx*.93+f[0]*.064;p.vy=p.vy*.93+f[1]*.064;
+    const mag=Math.hypot(p.vx,p.vy)||1,lim=2.1;if(mag>lim){p.vx*=lim/mag;p.vy*=lim/mag;}p.x+=p.vx;p.y+=p.vy;p.age++;
+    const m=anomalyMetric(p.x,p.y),near=Math.exp(-Math.pow((m-1)/.52,2));
+    const c=p.salt>.78?[213,158,84]:p.salt>.28?[89,208,213]:[184,216,215];
+    const a=.055+.18*near+.07*p.salt;
+    rctx.strokeStyle=`rgba(${c[0]},${c[1]},${c[2]},${a})`;rctx.lineWidth=p.width;rctx.beginPath();rctx.moveTo(p.px,p.py);rctx.lineTo(p.x,p.y);rctx.stroke();
+    if(((p.id+tick)&95)===0&&near>.28){rctx.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},${a*.75})`;rctx.fillRect(Math.round(p.x/4)*4,Math.round(p.y/4)*4,1.2,1.2);}
+    if(p.x<-60||p.x>W+60||p.y<-60||p.y>H+60||p.age>p.life)particles[i]=spawnParticle(p.id,false);
+  }
+  rctx.restore();tick++;
+}
+
+function drawBackground(t){
+  ctx.fillStyle='#020406';ctx.fillRect(0,0,W,H);
+  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'rgba(14,29,31,.16)');g.addColorStop(.5,'rgba(5,9,10,.02)');g.addColorStop(1,'rgba(33,21,12,.12)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.globalAlpha=.05;for(let y=0;y<H;y+=Math.max(9,H/80)){ctx.fillStyle=((y/9|0)&1)?'rgba(91,205,211,.18)':'rgba(207,156,87,.14)';ctx.fillRect(0,y,W,1);}ctx.restore();
+}
+function drawStrata(t){
+  ctx.save();ctx.globalCompositeOperation='screen';
+  for(const s of strata){ctx.beginPath();for(let i=0;i<=48;i++){const x=i/48*W,m=anomalyMetric(x,s.y),warp=Math.exp(-Math.pow((m-1)/.65,2))*H*.012*Math.sin(i*.85+s.phase);const y=s.y+s.tilt*(x/W-.5)+Math.sin(x/W*Math.PI*2*s.freq+s.phase+t*.012)*s.amp+warp;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}const a=.05+s.salt*.11;ctx.strokeStyle=s.salt>.78?`rgba(211,157,84,${a})`:`rgba(113,203,205,${a})`;ctx.lineWidth=.45;ctx.stroke();}
+  ctx.restore();
+}
+function drawPotentialMesh(t){
+  ctx.save();ctx.globalCompositeOperation='screen';const c=anomalyCenter();const step=Math.max(28,Math.min(W,H)/18);
+  for(let x=step*.5;x<W;x+=step){ctx.beginPath();for(let y=0;y<=H;y+=12){const m=anomalyMetric(x,y),bend=Math.exp(-Math.pow((m-1)/.55,2))*step*.24*Math.sin((y-c.y)*.018);const xx=x+(x<c.x?-1:1)*bend;if(y===0)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);}ctx.strokeStyle='rgba(129,213,214,.045)';ctx.lineWidth=.4;ctx.setLineDash([1,7]);ctx.lineDashOffset=-t*.22;ctx.stroke();}
+  ctx.setLineDash([]);ctx.restore();
+}
+function drawStations(t){
+  ctx.save();ctx.globalCompositeOperation='screen';
+  for(const s of stations){const top=H*.105,bottom=H*.91;ctx.strokeStyle='rgba(220,234,232,.075)';ctx.lineWidth=.45;ctx.setLineDash([1.5,8]);ctx.beginPath();ctx.moveTo(s.x,top);ctx.lineTo(s.x,bottom);ctx.stroke();ctx.setLineDash([]);const y=mix(top,bottom,.5+.42*Math.sin(t*.036+s.phase));ctx.strokeStyle=s.salt>.55?'rgba(211,159,84,.22)':'rgba(93,215,217,.21)';ctx.beginPath();ctx.moveTo(s.x-6,y);ctx.lineTo(s.x+6,y);ctx.stroke();ctx.fillStyle='rgba(223,237,235,.13)';ctx.fillRect(s.x-1,top-2,2,2);ctx.font='7px ui-monospace,monospace';ctx.fillStyle='rgba(206,226,224,.13)';ctx.fillText(String(s.id+1).padStart(2,'0'),s.x+3,top-4);}
+  ctx.restore();
+}
+function drawAnomalyEcho(t){
+  const c=anomalyCenter();ctx.save();ctx.globalCompositeOperation='screen';
+  for(let k=0;k<6;k++){const sx=1+k*.09,sy=1+k*.13;ctx.beginPath();for(let i=0;i<=anomaly.length;i++){const p=anomaly[i%anomaly.length],x=c.x+(p.x-c.x)*sx,y=c.y+(p.y-c.y)*sy+Math.sin(i*1.7+k+t*.03)*1.2;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.closePath();ctx.strokeStyle=`rgba(128,218,219,${.04+(5-k)*.013})`;ctx.lineWidth=.45;ctx.setLineDash([1,5+k*1.5]);ctx.lineDashOffset=-t*(.18+k*.03);ctx.stroke();}
+  ctx.setLineDash([]);ctx.restore();
+}
+function drawAnomalyAbsence(){
+  const c=anomalyCenter();ctx.save();ctx.beginPath();anomaly.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();const g=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,Math.min(W,H)*.18);g.addColorStop(0,'rgba(0,0,0,.92)');g.addColorStop(.62,'rgba(1,2,3,.73)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fill();ctx.restore();
+}
+function drawCrossSections(t){
+  ctx.save();ctx.globalCompositeOperation='screen';const c=anomalyCenter();const ys=[-.14,-.07,0,.07,.14];
+  for(let i=0;i<ys.length;i++){const y=c.y+ys[i]*Math.min(W,H);const w=Math.min(W,H)*(.2-Math.abs(ys[i])*.35);ctx.strokeStyle=`rgba(207,164,95,${.052+i*.009})`;ctx.lineWidth=.45;ctx.setLineDash([1,6]);ctx.beginPath();ctx.moveTo(c.x-w,y);ctx.lineTo(c.x+w,y);ctx.stroke();ctx.setLineDash([]);for(let j=-3;j<=3;j++){if(j===0)continue;const h=hash32(seed^(i*9199)^(j*11717));ctx.fillStyle=(h&1)?'rgba(102,211,214,.10)':'rgba(216,165,93,.10)';ctx.fillRect(c.x+j*w*.12,y-1,1,2);}}
+  ctx.restore();
+}
+function drawElectrodes(){
+  ctx.save();ctx.globalCompositeOperation='screen';for(const e of electrodes){ctx.strokeStyle=`rgba(216,161,84,${.045+e.life*.16})`;ctx.lineWidth=.55;ctx.setLineDash([1.5,7]);ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle=`rgba(96,215,218,${.035+e.life*.09})`;ctx.beginPath();ctx.arc(e.x,e.y,e.r*.63,0,Math.PI*2);ctx.stroke();ctx.fillStyle=`rgba(225,237,234,${.08+e.life*.12})`;ctx.fillRect(e.x-1,e.y-1,2,2);}ctx.restore();
+}
+function drawProbe(){
+  if(probe.strength<.018)return;ctx.save();ctx.globalCompositeOperation='screen';const e=probe.strength,r=16+e*18;ctx.strokeStyle=`rgba(142,226,226,${.05+e*.1})`;ctx.lineWidth=.55;ctx.beginPath();ctx.moveTo(probe.x-r,probe.y);ctx.lineTo(probe.x+r,probe.y);ctx.moveTo(probe.x,probe.y-r);ctx.lineTo(probe.x,probe.y+r);ctx.stroke();const m=anomalyMetric(probe.x,probe.y);ctx.font='7px ui-monospace,monospace';ctx.fillStyle=`rgba(204,232,229,${.05+e*.12})`;ctx.fillText(`ρ ${(m*100).toFixed(0).padStart(3,'0')}`,probe.x+8,probe.y-8);ctx.restore();
+}
+function drawScan(t){
+  const y=((t*.014)%1)*(H*1.16)-H*.08;ctx.save();ctx.globalCompositeOperation='screen';const g=ctx.createLinearGradient(0,y-20,0,y+20);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.5,'rgba(203,238,236,.045)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,y-22,W,44);ctx.strokeStyle='rgba(219,241,239,.055)';ctx.lineWidth=.4;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();ctx.restore();
+}
+function drawFrame(t){
+  drawBackground(t);drawStrata(t);drawPotentialMesh(t);
+  ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=.98;ctx.drawImage(residue,0,0,residue.width,residue.height,0,0,W,H);ctx.restore();
+  drawStations(t);drawCrossSections(t);drawAnomalyEcho(t);drawAnomalyAbsence();drawScan(t);drawElectrodes();drawProbe();
+  const vg=ctx.createRadialGradient(W*.54,H*.55,Math.min(W,H)*.18,W*.54,H*.55,Math.max(W,H)*.8);vg.addColorStop(.48,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.42)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+function updateStatus(){status.textContent=`${paused?'survey held':probe.strength>.08?'injection coupled':electrodes.length?'electrode decay':'passive resistivity survey'} · seed ${seed.toString(16).toUpperCase().padStart(8,'0')}`;}
+function frame(now){const dt=Math.min(.08,(now-last)/1000);last=now;if(!paused){acc+=dt;let guard=0;while(acc>=STEP&&guard++<5){simulate();acc-=STEP;}}drawFrame(tick*STEP);if((tick&15)===0)updateStatus();requestAnimationFrame(frame);}
+function setProbe(x,y,s){probe.x=x;probe.y=y;probe.active=true;probe.strength=clamp(Math.max(probe.strength,s),0,1.55);}
+function addElectrode(x,y){if(electrodes.length>=ELECTRODE_CAP)electrodes.shift();electrodes.push({x,y,r:7,life:1});setProbe(x,y,1.4);updateStatus();}
+function reseed(){seed=hash32(seed+0x9E3779B9);rebuild();}
+
+addEventListener('resize',resize,{passive:true});
+canvas.addEventListener('pointermove',e=>setProbe(e.clientX,e.clientY,.62),{passive:true});
+canvas.addEventListener('pointerdown',e=>{setProbe(e.clientX,e.clientY,1.25);addElectrode(e.clientX,e.clientY);},{passive:true});
+canvas.addEventListener('pointerleave',()=>{probe.active=false;},{passive:true});
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();paused=!paused;updateStatus();}else if(e.key==='r'||e.key==='R')reseed();else if(e.key==='h'||e.key==='H'){showUI=!showUI;hud.classList.toggle('off',!showUI);keys.classList.toggle('off',!showUI);}});
+resize();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
