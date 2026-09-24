@@ -95,8 +95,8 @@ function drawChills(now){
     const e=Math.pow(1-t,1.45);
     const r=Math.min(W,H)*(.055+.19*smooth(t));
     const g=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,r);
-    g.addColorStop(0,\`rgba(7,8,28,\${.78*e})\`);
-    g.addColorStop(.42,\`rgba(17,28,70,\${.54*e})\`);
+    g.addColorStop(0,`rgba(7,8,28,${.78*e})`);
+    g.addColorStop(.42,`rgba(17,28,70,${.54*e})`);
     g.addColorStop(1,'rgba(20,31,66,0)');
     ctx.fillStyle=g;ctx.fillRect(c.x-r,c.y-r,r*2,r*2);
     ctx.globalAlpha=.18*e;ctx.strokeStyle='#83d7ff';ctx.lineWidth=.7;
