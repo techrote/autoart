@@ -1,0 +1,80 @@
+.08 });
+
+    // Lathe-like family of offset contours around the void.
+    for (let k=0;k<4;k++) {
+      const pts=[];
+      const cx=W*.665, cy=H*.49;
+      const rr=Math.min(W,H)*(.155+k*.026);
+      const wob=.04 + k*.008;
+      for(let i=0;i<=180;i++) {
+        const a=(i/180)*Math.PI*2;
+        const mod=1+wob*Math.sin(a*5 + local()*0.25) + .025*Math.sin(a*11);
+        pts.push([cx+Math.cos(a)*rr*1.18*mod, cy+Math.sin(a)*rr*.82*mod]);
+      }
+      paths.push({pts, alpha:.09 + k*.016, width:.44, dash:[1.4, 9+k*2], color:[231,237,255], speed:.04+k*.01});
+    }
+    return paths;
+  }
+
+  function hilbert(d, order) {
+    let x=0,y=0,t=d;
+    for (let s=1; s<(1<<order); s<<=1) {
+      const rx = 1 & (t >> 1);
+      const ry = 1 & (t ^ rx);
+      if (ry === 0) {
+        if (rx === 1) { x = s-1-x; y = s-1-y; }
+        const tmp=x; x=y; y=tmp;
+      }
+      x += s*rx; y += s*ry; t >>= 2;
+    }
+    return [x,y];
+  }
+
+  function makeGlyphCells() {
+    const local = makeRng(hash32(seed ^ 0xA5C11E));
+    const cols = W < 700 ? 18 : 31;
+    const rows = W < 700 ? 12 : 19;
+    const cells=[];
+    const chars=['▀','▄','░','▒','▓','╱','╲','·','•','┼'];
+    for(let y=0;y<rows;y++) for(let x=0;x<cols;x++) {
+      const h = local();
+      if (h < .39) continue;
+      cells.push({x,y,ch:chars[Math.floor(local()*chars.length)],v:local(),phase:local()*Math.PI*2});
+    }
+    return {cols,rows,cells};
+  }
+
+  function drawBackground(t) {
+    ctx.fillStyle = '#020307';
+    ctx.fillRect(0,0,W,H);
+
+    const cx=W*.665, cy=H*.49, r=Math.min(W,H)*.31;
+    let g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+    g.addColorStop(0,'rgba(10,4,18,.10)');
+    g.addColorStop(.38,'rgba(62,15,72,.055)');
+    g.addColorStop(.62,'rgba(0,110,130,.032)');
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    // Very restrained interference bands.
+    ctx.save();
+    ctx.globalAlpha=.035;
+    for(let y=0;y<H;y+=Math.max(4,H/180)) {
+      const v=.5+.5*Math.sin(y*.031 + t*.19);
+      ctx.fillStyle = v>.58 ? '#4de8ff' : '#ff4fcf';
+      ctx.fillRect(0,y,W,1);
+    }
+    ctx.restore();
+  }
+
+  function drawToolpaths(t) {
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    for (let p of toolpaths) {
+      ctx.beginPath();
+      for(let i=0;i<p.pts.length;i++) {
+        const q=p.pts[i];
+        if(i===0) ctx.moveTo(q[0],q[1]); else ctx.lineTo(q[0],q[1]);
+      }
+      ctx.strokeStyle=`rgba(${p.color[0]},${p.color[1]},${p.color[2]},${p.alpha})`;
+      ctx.lineWid
