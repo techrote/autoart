@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0004 — What Remains</title>
+<style>
+  :root { color-scheme: light; --paper:#eee9df; --ink:#24211d; --rust:#8c4637; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; width:100%; height:100%; overflow:hidden; background:var(--paper); }
+  body { touch-action:none; user-select:none; -webkit-user-select:none; cursor:crosshair; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #veil {
+    position:fixed; inset:0; pointer-events:none;
+    background:
+      radial-gradient(circle at 49% 47%, rgba(255,255,255,.34), transparent 43%),
+      linear-gradient(180deg, rgba(255,255,255,.13), rgba(61,48,35,.025));
+    mix-blend-mode:soft-light;
+  }
+  @media (prefers-reduced-motion: reduce) { body { cursor:default; } }
+</style>
+</head>
+<body aria-label="What Remains. A quiet field that permanently records a limited number of touches.">
+<canvas id="art"></canvas>
+<div id="veil"></div>
+<script>
+(() => {
+  'use strict';
+
+  const canvas = document.getElementById('art');
+  const ctx = canvas.getContext('2d', { alpha:false });
+  const scars = [];
+  const MAX_SCARS = 13;
+  const START = performance.now();
+  const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W=1, H=1, DPR=1, raf=0;
+
+  function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+  function smooth(t){ t=clamp(t,0,1); return t*t*(3-2*t); }
+  function hash(n){ n=Math.imul(n^n>>>16,0x45d9f3b); n=Math.imul(n^n>>>16,0x45d9f3b); return (n^n>>>16)>>>0; }
+  function unit(n){ return hash(n)/4294967295; }
+
+  function resize(){
+    W=Math.max(1,innerWidth); H=Math.max(1,innerHeight); DPR=Math.min(devicePixelRatio||1,1.75);
+    canvas.width=Math.floor(W*DPR); canvas.height=Math.floor(H*DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+
+  function addScar(x,y,born,seed,old=false){
+    const margin=Math.min(W,H)*.08;
+    scars.push({
+      x:clamp(x,margin,W-margin), y:clamp(y,margin,H-margin), born, seed, old,
+      angle:(unit(seed+1)-.5)*1.35,
+      len:22+unit(seed+2)*54,
+      bend:(unit(seed+3)-.5)*18,
+      side:unit(seed+4)>.5?1:-1
+    });
+  }
+
+  function seedOldScars(){
+    if(scars.length) return;
+    const m=Math.min(W,H);
+    addScar(W*.31,H*.63,START-9000,3117,true);
+    addScar(W*.71,H*.37,START-9000,7409,true);
+    if(m>560) addScar(W*.52,H*.78,START-9000,9913,true);
+  }
+
+  function drawPaper(t){
+    ctx.fillStyle='#eee9df'; ctx.fillRect(0,0,W,H);
+    const step=18;
+    ctx.save();
+    ctx.globalAlpha=.055;
+    ctx.fillStyle='#534a3f';
+    for(let y=7;y<H;y+=step){
+      for(let x=11;x<W;x+=step){
+        const h=hash((x*73856093)^(y*19349663));
+        if((h&15)>2) continue;
+        const dx=((h>>>5)&7)-3.5, dy=((h>>>9)&7)-3.5;
+        ctx.fillRect(x+dx,y+dy,.55,.55);
+      }
+    }
+    ctx.restore();
+
+    const cx=W*.5, cy=H*.5;
+    const rx=Math.min(W*.31,H*.43), ry=Math.min(H*.27,W*.34);
+    ctx.save();
+    ctx.strokeStyle='rgba(36,33,29,.105)';
+    ctx.lineWidth=.62;
+    ctx.setLineDash([1.2,8.5]);
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,-.055,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const lines=7;
+    for(let i=0;i<lines;i++){
+      const yy=cy-ry*.72 + i*(ry*1.44/(lines-1));
+      const phase=i*1.73;
+      const drift=prefersReduced?0:Math.sin(t*.00013+phase)*1.5;
+      ctx.strokeStyle=`rgba(36,33,29,${.045 + (i===3?.035:0)})`;
+      ctx.lineWidth=i===3?.68:.48;
+      ctx.beginPath();
+      ctx.moveTo(cx-rx*.78,yy+drift);
+      ctx.bezierCurveTo(cx-rx*.28,yy-drift*.6,cx+rx*.27,yy+drift*.4,cx+rx*.78,yy-drift*.2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawScar(s, now){
+    const age=s.old?1:smooth((now-s.born)/1700);
+    const settle=s.old?1:smooth((now-s.born-550)/4200);
+    const c=Math.cos(s.angle), q=Math.sin(s.angle);
+    const half=s.len*.5*age;
+    const gap=(1.2+4.3*settle)*(s.old?.58:1);
+    const nx=-q, ny=c;
+    const x1=s.x-c*half, y1=s.y-q*half;
+    const x2=s.x+c*half, y2=s.y+q*half;
+    const bx=s.x+nx*s.bend, by=s.y+ny*s.bend;
+
+    ctx.save();
+    ctx.lineCap='round';
+
+    // soft compressed paper along both sides of the cut
+    ctx.strokeStyle=`rgba(255,255,255,${.28*age})`;
+    ctx.lineWidth=2.2+settle*1.1;
+    for(const sign of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(x1+nx*gap*sign,y1+ny*gap*sign);
+      ctx.quadraticCurveTo(bx+nx*gap*1.45*sign,by+ny*gap*1.45*sign,x2+nx*gap*sign,y2+ny*gap*sign);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle=`rgba(36,33,29,${(.34+.28*settle)*age*(s.old?.45:1)})`;
+    ctx.lineWidth=.72;
+    for(const sign of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(x1+nx*gap*.44*sign,y1+ny*gap*.44*sign);
+      ctx.quadraticCurveTo(bx+nx*gap*sign,by+ny*gap*sign,x2+nx*gap*.44*sign,y2+ny*gap*.44*sign);
+      ctx.stroke();
+    }
+
+    // central fracture and one small displaced fibre
+    ctx.strokeStyle=`rgba(26,23,20,${(.48+.24*settle)*age*(s.old?.52:1)})`;
+    ctx.lineWidth=.55;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.quadraticCurveTo(bx,by,x2,y2); ctx.stroke();
+
+    const fleck=(.9+1.5*settle)*age;
+    ctx.fillStyle=`rgba(140,70,55,${(.32+.30*settle)*age*(s.old?.55:1)})`;
+    ctx.beginPath(); ctx.ellipse(s.x+nx*gap*s.side*.25,s.y+ny*gap*s.side*.25,fleck,fleck*.55,s.angle,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function render(now){
+    drawPaper(now-START);
+    for(const s of scars) drawScar(s,now);
+
+    // one fixed witness point: it never moves, even as the field is altered
+    ctx.fillStyle='rgba(36,33,29,.62)';
+    ctx.beginPath(); ctx.arc(W*.5,H*.5,1.35,0,Math.PI*2); ctx.fill();
+
+    if(scars.length<MAX_SCARS || scars.some(s=>!s.old && now-s.born<6000)) raf=requestAnimationFrame(render);
+    else raf=0;
+  }
+
+  function ensureLoop(){ if(!raf) raf=requestAnimationFrame(render); }
+
+  addEventListener('pointerdown', e=>{
+    if(e.button!==undefined && e.button!==0) return;
+    if(scars.length>=MAX_SCARS) return;
+    const seed=(Math.floor(e.clientX*97)^Math.floor(e.clientY*193)^Math.floor(performance.now()*11))>>>0;
+    addScar(e.clientX,e.clientY,performance.now(),seed,false);
+    ensureLoop();
+  }, {passive:true});
+
+  addEventListener('resize', ()=>{ resize(); ensureLoop(); }, {passive:true});
+
+  resize();
+  seedOldScars();
+  ensureLoop();
+})();
+</script>
+</body>
+</html>
