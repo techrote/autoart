@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART e0002 — Seam Register</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#030507; }
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; background:#030507; touch-action:none; }
+  #hud {
+    position:fixed; left:14px; top:12px; z-index:2; pointer-events:none;
+    color:rgba(221,235,239,.66); font-size:10px; line-height:1.5; letter-spacing:.09em;
+    text-transform:uppercase; text-shadow:0 0 14px rgba(112,218,229,.1); transition:opacity .2s ease;
+  }
+  #hud b { color:rgba(242,248,249,.9); font-weight:600; }
+  #hud .quiet { opacity:.48; }
+  #help {
+    position:fixed; right:14px; bottom:11px; z-index:2; pointer-events:none;
+    color:rgba(211,225,228,.29); font-size:9px; letter-spacing:.06em; transition:opacity .2s ease;
+  }
+  .off { opacity:0 !important; }
+  @media (max-width:640px) {
+    #hud { left:9px; top:8px; font-size:8px; }
+    #help { right:9px; bottom:7px; font-size:7px; max-width:68vw; text-align:right; }
+  }
+</style>
+</head>
+<body>
+<canvas id="field" aria-label="Animated generative artwork titled Seam Register"></canvas>
+<div id="hud"><b>AUTOART e0002</b> // SEAM REGISTER<br><span class="quiet" id="status">survey stable · probe idle</span></div>
+<div id="help">POINTER probe · CLICK core pulse · SPACE hold · R reseed · H interface</div>
+<script>
+(() => {
+  'use strict';
+
+  const canvas = document.getElementById('field');
+  const ctx = canvas.getContext('2d', { alpha:false });
+  const traces = document.createElement('canvas');
+  const tctx = traces.getContext('2d', { alpha:true });
+  const hud = document.getElementById('hud');
+  const help = document.getElementById('help');
+  const status = document.getElementById('status');
+
+  const BASE_SEED = 0xE0002A51 >>> 0;
+  const STEP = 1 / 60;
+  const TRACE_CAP = 1050;
+  const PULSE_CAP = 5;
+
+  let W=1, H=1, DPR=1, tick=0, accumulator=0, last=performance.now();
+  let seed=BASE_SEED, rng=makeRng(seed), paused=false, ui=true;
+  let seam=[], strata=[], boreholes=[], motes=[], pulses=[];
+  let probe={x:0,y:0,active:false,energy:0};
+
+  function makeRng(s){
+    let a=s>>>0;
+    return () => {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hash32(x){
+    x=(x^(x>>>16))>>>0; x=Math.imul(x,0x7feb352d)>>>0;
+    x=(x^(x>>>15))>>>0; x=Math.imul(x,0x846ca68b)>>>0;
+    return (x^(x>>>16))>>>0;
+  }
+  const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+  const lerp=(a,b,t)=>a+(b-a)*t;
+
+  function rand(a,b){ return a+(b-a)*rng(); }
+
+  function resize(){
+    W=Math.max(1,innerWidth); H=Math.max(1,innerHeight); DPR=Math.min(devicePixelRatio||1,1.55);
+    const bw=Math.max(1,Math.floor(W*DPR)), bh=Math.max(1,Math.floor(H*DPR));
+    if(canvas.width===bw && canvas.height===bh) return;
+    canvas.width=traces.width=bw; canvas.height=traces.height=bh;
+    ctx.setTransform(DPR,0,0,DPR,0,0); tctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.imageSmoothingEnabled=tctx.imageSmoothingEnabled=true;
+    rebuild();
+  }
+
+  function rebuild(){
+    rng=makeRng(seed); tick=0; pulses=[]; probe.energy=0;
+    tctx.setTransform(1,0,0,1,0,0); tctx.clearRect(0,0,traces.width,traces.height); tctx.setTransform(DPR,0,0,DPR,0,0);
+    seam=makeSeam(); strata=makeStrata(); boreholes=makeBoreholes();
+    const count=clamp(Math.floor((W*H)/1050),520,TRACE_CAP);
+    motes=new Array(count); for(let i=0;i<count;i++) motes[i]=spawnMote(i,true);
+    for(let i=0;i<150;i++) simulate();
+    updateStatus();
+  }
+
+  function makeSeam(){
+    const local=makeRng(hash32(seed^0x51EA551));
+    const pts=[]; const n=11;
+    for(let i=0;i<n;i++){
+      const u=i/(n-1);
+      const x=W*(.47 + .18*u + Math.sin(u*5.1+1.2)*.023 + (local()-.5)*.015);
+      const y=H*(-.08 + 1.18*u + Math.sin(u*10.8)*.018 + (local()-.5)*.012);
+      const w=Math.min(W,H)*(.035 + .014*Math.sin(u*4.6+.8) + local()*.012);
+      pts.push({x,y,w});
+    }
+    return pts;
+  }
+
+  function makeStrata(){
+    const local=makeRng(hash32(seed^0x57AA7A));
+    const lines=[]; const n=W<700?19:29;
+    for(let i=0;i<n;i++){
+      lines.push({
+        y:(i+.55)/n*H,
+        amp:H*(.008+local()*.018),
+        phase:local()*Math.PI*2,
+        freq:1.4+local()*2.3,
+        salt:local(),
+        offset:(local()-.5)*H*.018
+      });
+    }
+    return lines;
+  }
+
+  function makeBoreholes(){
+    const local=makeRng(hash32(seed^0xB0AE110));
+    const xs=[.13,.27,.39,.76,.88].map((u,i)=>W*(u+(local()-.5)*.016));
+    return xs.map((x,i)=>({x, phase:local()*Math.PI*2, depth:.56+local()*.34, salt:local(), id:i}));
+  }
+
+  function seamAtY(y){
+    if(seam.length<2) return {x:W*.56,w:30,tx:0,ty:1};
+    let best=seam[0], next=seam[1];
+    for(let i=0;i<seam.length-1;i++){
+      if(y>=seam[i].y && y<=seam[i+1].y){ best=seam[i]; next=seam[i+1]; break; }
+      if(y>seam[i+1].y){ best=seam[i]; next=seam[i+1]; }
+    }
+    const dy=(next.y-best.y)||1; const u=clamp((y-best.y)/dy,0,1);
+    const x=lerp(best.x,next.x,u), w=lerp(best.w,next.w,u);
+    const dx=next.x-best.x, len=Math.hypot(dx,dy)||1;
+    return {x,w,tx:dx/len,ty:dy/len};
+  }
+
+  function spawnMote(id,initial=false){
+    const edge=rng(); let x,y;
+    if(edge<.62){ x=rand(-25,W+25); y=rng()<.5?rand(-18,H*.2):rand(H*.8,H+18); }
+    else { x=rng()<.5?rand(-22,W*.16):rand(W*.84,W+22); y=rand(-20,H+20); }
+    return {id,x,y,px:x,py:y,vx:rand(-.12,.12),vy:rand(-.12,.12),age:initial?Math.floor(rng()*900):0,life:Math.floor(rand(700,2100)),phase:rng()*6.283,salt:rng(),width:rand(.35,1.05)};
+  }
+
+  function fieldAt(x,y,t,m){
+    const s=seamAtY(y); const dx=x-s.x; const signed=dx/(s.w+1);
+    const q=Math.sin(y*.010 + t*.045 + m.phase) + .55*Math.sin((x+y)*.006-t*.031) + .28*Math.cos(y*.021+x*.004+t*.018);
+    let fx=.28*Math.cos(q*1.9) + Math.sin(y*.004+t*.022)*.18;
+    let fy=.52 + .18*Math.sin(q*2.1);
+
+    const near=Math.exp(-signed*signed*1.7);
+    const side=signed<0?-1:1;
+    fx += side*near*1.65;
+    fy += s.tx*near*.55;
+
+    if(probe.energy>.002){
+      const px=x-probe.x, py=y-probe.y, d2=px*px+py*py+80;
+      const reach=Math.min(W,H)*.21;
+      const a=Math.exp(-d2/(reach*reach))*probe.energy;
+      const inv=1/Math.sqrt(d2);
+      fx += (-py*inv)*a*2.4 - px*inv*a*.42;
+      fy += ( px*inv)*a*2.4 - py*inv*a*.42;
+    }
+
+    for(const p of pulses){
+      const px=x-p.x, py=y-p.y, d=Math.hypot(px,py)+.01;
+      const ring=Math.exp(-Math.pow((d-p.r)/Math.max(18,p.r*.17),2))*p.life;
+      fx += (px/d)*ring*2.5;
+      fy += (py/d)*ring*2.5;
+    }
+    return [fx,fy];
+  }
+
+  function simulate(){
+    const t=tick*STEP;
+    probe.energy*=.974;
+    for(let i=pulses.length-1;i>=0;i--){
+      const p=pulses[i]; p.r+=1.65; p.life*=.985; if(p.life<.025 || p.r>Math.max(W,H)*.5) pulses.splice(i,1);
+    }
+
+    tctx.save();
+    tctx.globalCompositeOperation='source-over';
+    tctx.fillStyle='rgba(3,5,7,.012)'; tctx.fillRect(0,0,W,H);
+    tctx.globalCompositeOperation='lighter';
+
+    for(let i=0;i<motes.length;i++){
+      let m=motes[i]; m.px=m.x; m.py=m.y;
+      const f=fieldAt(m.x,m.y,t,m);
+      m.vx=m.vx*.925+f[0]*.065; m.vy=m.vy*.925+f[1]*.065;
+      const mag=Math.hypot(m.vx,m.vy)||1, lim=2.25;
+      if(mag>lim){m.vx*=lim/mag; m.vy*=lim/mag;}
+      m.x+=m.vx; m.y+=m.vy; m.age++;
+      const s=seamAtY(m.y); const proximity=Math.exp(-Math.pow((m.x-s.x)/(s.w*2.2+1),2));
+      const c=m.salt>.76?[214,164,92]:m.salt>.28?[100,207,218]:[194,218,220];
+      const a=(.055+.19*proximity+.065*m.salt)*clamp(Math.hypot(m.vx,m.vy)/1.7,.2,1);
+      tctx.strokeStyle=`rgba(${c[0]},${c[1]},${c[2]},${a})`; tctx.lineWidth=m.width;
+      tctx.beginPath(); tctx.moveTo(m.px,m.py); tctx.lineTo(m.x,m.y); tctx.stroke();
+      if(((m.id+tick)&63)===0 && proximity>.24){
+        tctx.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},${a*.55})`;
+        tctx.fillRect(Math.round(m.x/5)*5,Math.round(m.y/5)*5,1.4,1.4);
+      }
+      const out=m.x<-60||m.x>W+60||m.y<-60||m.y>H+60;
+      if(out||m.age>m.life) motes[i]=spawnMote(m.id,false);
+    }
+    tctx.restore(); tick++;
+  }
+
+  function background(t){
+    ctx.fillStyle='#030507'; ctx.fillRect(0,0,W,H);
+    const g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'rgba(26,39,40,.12)'); g.addColorStop(.5,'rgba(5,12,14,.02)'); g.addColorStop(1,'rgba(28,18,11,.11)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    ctx.save(); ctx.globalAlpha=.055;
+    const step=Math.max(8,H/95);
+    for(let y=0;y<H;y+=step){
+      const v=.5+.5*Math.sin(y*.026+t*.055);
+      ctx.fillStyle=v>.57?'rgba(111,218,228,.34)':'rgba(198,155,92,.25)';
+      ctx.fillRect(0,y,W,1);
+    }
+    ctx.restore();
+  }
+
+  function drawStrata(t){
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    for(const s of strata){
+      ctx.beginPath();
+      const sample=40;
+      for(let i=0;i<=sample;i++){
+        const x=i/sample*W; const fault=seamAtY(s.y).x;
+        const side=x>fault?1:0;
+        const y=s.y+s.offset+Math.sin((x/W)*Math.PI*2*s.freq+s.phase+t*.018)*s.amp + side*(s.salt-.5)*H*.036;
+        if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      const a=.055+s.salt*.105;
+      ctx.strokeStyle=s.salt>.72?`rgba(214,164,92,${a})`:`rgba(112,205,214,${a})`;
+      ctx.lineWidth=.45+s.salt*.42; ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawSeam(t){
+    ctx.save();
+    ctx.beginPath();
+    for(let i=0;i<seam.length;i++){
+      const p=seam[i]; const nx=i?seam[i].y-seam[i-1].y:seam[1].y-p.y; const ny=-(i?seam[i].x-seam[i-1].x:seam[1].x-p.x); const l=Math.hypot(nx,ny)||1;
+      const x=p.x+(nx/l)*p.w, y=p.y+(ny/l)*p.w;
+      if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    for(let i=seam.length-1;i>=0;i--){
+      const p=seam[i]; const j=i?i-1:1; const nx=p.y-seam[j].y, ny=-(p.x-seam[j].x), l=Math.hypot(nx,ny)||1;
+      ctx.lineTo(p.x-(nx/l)*p.w,p.y-(ny/l)*p.w);
+    }
+    ctx.closePath();
+    const sg=ctx.createLinearGradient(W*.43,0,W*.69,H);
+    sg.addColorStop(0,'rgba(1,2,3,.88)'); sg.addColorStop(.48,'rgba(0,0,0,.96)'); sg.addColorStop(1,'rgba(4,3,2,.91)');
+    ctx.fillStyle=sg; ctx.fill();
+
+    ctx.globalCompositeOperation='screen';
+    ctx.strokeStyle='rgba(204,229,231,.20)'; ctx.lineWidth=.65; ctx.setLineDash([1.2,7.5]); ctx.stroke();
+    ctx.setLineDash([]);
+
+    for(let i=1;i<seam.length-1;i++){
+      const p=seam[i]; const pulse=.5+.5*Math.sin(t*.12+p.y*.018);
+      ctx.fillStyle=`rgba(114,220,229,${.025+.05*pulse})`;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1.1+pulse*1.4,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawContours(t){
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    const levels=7;
+    for(let k=0;k<levels;k++){
+      const off=(k+1)*Math.min(W,H)*.018;
+      for(const side of [-1,1]){
+        ctx.beginPath();
+        for(let i=0;i<seam.length;i++){
+          const p=seam[i], j=i<seam.length-1?i+1:i-1;
+          const dx=seam[j].x-p.x, dy=seam[j].y-p.y, l=Math.hypot(dx,dy)||1;
+          const nx=-dy/l, ny=dx/l;
+          const wob=Math.sin(i*1.8+k*.9+t*.035)*off*.08;
+          const x=p.x+nx*side*(p.w+off+wob), y=p.y+ny*side*(p.w+off+wob);
+          if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        const a=.032+(levels-k)*.008;
+        ctx.strokeStyle=`rgba(151,220,225,${a})`; ctx.lineWidth=.42; ctx.setLineDash([1.2,5+k*1.6]); ctx.lineDashOffset=-t*(.45+k*.05); ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]); ctx.restore();
+  }
+
+  function drawBoreholes(t){
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    const top=H*.11, bottom=H*.91;
+    for(const b of boreholes){
+      const depth=top+(bottom-top)*b.depth;
+      ctx.strokeStyle='rgba(215,231,232,.075)'; ctx.lineWidth=.5; ctx.setLineDash([2,7]);
+      ctx.beginPath(); ctx.moveTo(b.x,top); ctx.lineTo(b.x,depth); ctx.stroke();
+      ctx.setLineDash([]);
+      const y=lerp(top,depth,.5+.43*Math.sin(t*.05+b.phase));
+      ctx.strokeStyle=b.salt>.55?'rgba(215,165,91,.18)':'rgba(105,214,224,.17)'; ctx.lineWidth=.7;
+      ctx.beginPath(); ctx.moveTo(b.x-7,y); ctx.lineTo(b.x+7,y); ctx.stroke();
+      ctx.fillStyle='rgba(220,235,236,.18)'; ctx.fillRect(b.x-1,depth-1,2,2);
+      ctx.font='8px ui-monospace,monospace'; ctx.fillStyle='rgba(209,228,230,.17)';
+      ctx.fillText(String(b.id+1).padStart(2,'0'),b.x+4,top-3);
+    }
+    ctx.restore();
+  }
+
+
+  function drawCoreLogs(t){
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    const top=H*.11, bottom=H*.91;
+    for(const b of boreholes){
+      const depth=top+(bottom-top)*b.depth;
+      const segments=W<600?8:12;
+      for(let i=0;i<segments;i++){
+        const h=hash32(seed^(b.id*0x45D9F3B)^(i*0x119DE1F3));
+        const y=lerp(top,depth,(i+.5)/segments);
+        const v=(h&255)/255; const len=3+v*9;
+        const pulse=.82+.18*Math.sin(t*.035+i*.7+b.phase);
+        const col=v>.7?[214,164,92]:v>.34?[114,215,223]:[211,229,230];
+        ctx.strokeStyle=`rgba(${col[0]},${col[1]},${col[2]},${(.04+v*.09)*pulse})`;
+        ctx.lineWidth=.6; ctx.beginPath(); ctx.moveTo(b.x-len,y); ctx.lineTo(b.x+len*.45,y); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawTransects(t){
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    const n=W<600?5:8;
+    for(let i=0;i<n;i++){
+      const y=H*(.12+(i+.5)/n*.77);
+      const s=seamAtY(y);
+      const span=Math.min(W,H)*(.10+.018*((i+2)%3));
+      const phase=.78+.22*Math.sin(t*.043+i*1.17);
+      ctx.strokeStyle=`rgba(195,225,227,${.045*phase})`; ctx.lineWidth=.45; ctx.setLineDash([1,5]);
+      ctx.beginPath(); ctx.moveTo(s.x-span,y); ctx.lineTo(s.x+span,y); ctx.stroke(); ctx.setLineDash([]);
+      for(let j=-2;j<=2;j++){
+        if(j===0) continue;
+        const x=s.x+j*span*.22;
+        const h=hash32(seed^(i*7717)^(j*11939));
+        const a=.05+((h&255)/255)*.08;
+        ctx.fillStyle=(h&256)?`rgba(210,164,94,${a})`:`rgba(111,218,226,${a})`;
+        ctx.fillRect(x,y-1,1.5,2);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawScan(t){
+    const x=((t*.021)%1)*(W*1.14)-W*.07;
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    const g=ctx.createLinearGradient(x-25,0,x+25,0);
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(.48,'rgba(164,230,234,.028)'); g.addColorStop(.5,'rgba(217,245,246,.08)'); g.addColorStop(.52,'rgba(164,230,234,.028)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(x-28,0,56,H);
+    ctx.strokeStyle='rgba(221,241,242,.075)'; ctx.lineWidth=.45; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawResidualTicks(t){
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    const spacing=Math.max(18,Math.min(W,H)/32);
+    for(let y=spacing*.5, gy=0;y<H;y+=spacing,gy++){
+      const s=seamAtY(y);
+      for(let side of [-1,1]){
+        const count=2+((hash32(seed^(gy*8317)^(side>0?0xA5:0x5A))>>>4)&3);
+        for(let k=0;k<count;k++){
+          const h=hash32(seed^(gy*92821)^(k*68111)^(side>0?0xBEEF:0xCAFE));
+          const d=s.w+14+((h&255)/255)*Math.min(W,H)*.16;
+          const x=s.x+side*d;
+          const a=.035+((h>>>8&255)/255)*.075*(.6+.4*Math.sin(t*.09+(h&31)));
+          ctx.fillStyle=`rgba(178,224,227,${a})`; ctx.fillRect(x,y,1+(h&1),1);
+        }
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawProbe(t){
+    if(probe.energy<.015) return;
+    const e=probe.energy;
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    const r=18+e*22;
+    ctx.strokeStyle=`rgba(164,231,235,${.08+e*.13})`; ctx.lineWidth=.6; ctx.setLineDash([2,5]);
+    ctx.beginPath(); ctx.arc(probe.x,probe.y,r,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle=`rgba(219,239,240,${.07+e*.12})`;
+    ctx.beginPath(); ctx.moveTo(probe.x-r*.35,probe.y); ctx.lineTo(probe.x+r*.35,probe.y); ctx.moveTo(probe.x,probe.y-r*.35); ctx.lineTo(probe.x,probe.y+r*.35); ctx.stroke();
+    const s=seamAtY(probe.y); const dist=Math.abs(probe.x-s.x);
+    ctx.font='8px ui-monospace,monospace'; ctx.fillStyle=`rgba(202,232,234,${.07+e*.15})`;
+    ctx.fillText(`Δ ${Math.round(dist).toString().padStart(3,'0')}`,probe.x+10,probe.y-10);
+    ctx.restore();
+  }
+
+  function drawPulses(){
+    ctx.save(); ctx.globalCompositeOperation='screen';
+    for(const p of pulses){
+      ctx.strokeStyle=`rgba(214,164,92,${.05+p.life*.19})`; ctx.lineWidth=.6; ctx.setLineDash([1.5,8]);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle=`rgba(119,219,227,${.025+p.life*.075})`; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*.72,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawFrame(t){
+    background(t); drawStrata(t);
+    ctx.save(); ctx.globalCompositeOperation='screen'; ctx.globalAlpha=.92;
+    ctx.drawImage(traces,0,0,traces.width,traces.height,0,0,W,H); ctx.restore();
+    drawResidualTicks(t); drawContours(t); drawBoreholes(t); drawCoreLogs(t); drawTransects(t); drawSeam(t); drawScan(t); drawPulses(); drawProbe(t);
+    const vg=ctx.createRadialGradient(W*.55,H*.5,Math.min(W,H)*.18,W*.55,H*.5,Math.max(W,H)*.76);
+    vg.addColorStop(.45,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.38)'); ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  }
+
+  function updateStatus(){
+    const mode=paused?'survey held':probe.energy>.08?'probe coupled':pulses.length?'core pulse decaying':'survey stable';
+    status.textContent=`${mode} · seed 0x${seed.toString(16).toUpperCase().padStart(8,'0')}`;
+  }
+
+  function frame(now){
+    const dt=Math.min(.08,(now-last)/1000); last=now;
+    if(!paused){ accumulator+=dt; let guard=0; while(accumulator>=STEP && guard++<5){simulate();accumulator-=STEP;} }
+    drawFrame(tick*STEP);
+    if((tick&15)===0) updateStatus();
+    requestAnimationFrame(frame);
+  }
+
+  function setProbe(x,y,boost){
+    probe.x=x; probe.y=y; probe.active=true; probe.energy=clamp(Math.max(probe.energy,boost),0,1.6);
+  }
+  function addPulse(x,y){
+    if(pulses.length>=PULSE_CAP) pulses.shift();
+    pulses.push({x,y,r:8,life:1}); setProbe(x,y,1.45); updateStatus();
+  }
+  function reseed(){ seed=hash32(seed+0x9E3779B9); rebuild(); }
+
+  addEventListener('resize',resize,{passive:true});
+  canvas.addEventListener('pointermove',e=>setProbe(e.clientX,e.clientY,.68),{passive:true});
+  canvas.addEventListener('pointerdown',e=>{setProbe(e.clientX,e.clientY,1.35);addPulse(e.clientX,e.clientY);},{passive:true});
+  canvas.addEventListener('pointerleave',()=>{probe.active=false;},{passive:true});
+  addEventListener('keydown',e=>{
+    if(e.code==='Space'){e.preventDefault();paused=!paused;updateStatus();}
+    else if(e.key==='r'||e.key==='R')reseed();
+    else if(e.key==='h'||e.key==='H'){ui=!ui;hud.classList.toggle('off',!ui);help.classList.toggle('off',!ui);}
+  });
+
+  resize(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
