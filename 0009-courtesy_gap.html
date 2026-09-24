@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0009 — Courtesy Gap</title>
+<style>
+  :root{color-scheme:dark;background:#100b18}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100b18}
+  body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:default}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+  #grain{position:fixed;inset:0;pointer-events:none;opacity:.10;mix-blend-mode:soft-light;
+    background-image:
+      radial-gradient(circle at 18% 24%,rgba(255,255,255,.18) 0 .55px,transparent .7px),
+      radial-gradient(circle at 67% 71%,rgba(255,255,255,.12) 0 .45px,transparent .62px);
+    background-size:9px 9px,13px 13px}
+</style>
+</head>
+<body aria-label="Courtesy Gap. Warm strands descend and cool strands rise toward a narrow central interval. Pointer presence compresses the gap without closing it; clicks allow brief points of contact.">
+<canvas id="art"></canvas><div id="grain"></div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+const PAIRS=31;
+const MAX_CONTACTS=4;
+const CONTACT_MS=2800;
+const prefersReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pointer={x:.5,y:.5,tx:.5,ty:.5,inside:false,energy:0};
+const contacts=[];
+let W=1,H=1,D=1,last=performance.now(),raf=0;
+
+function hash(n){n=Math.imul(n^n>>>16,0x45d9f3b);n=Math.imul(n^n>>>16,0x45d9f3b);return((n^n>>>16)>>>0)/4294967295}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function damp(v,t,dt,k){return v+(t-v)*(1-Math.exp(-k*dt))}
+function smooth(t){t=clamp(t,0,1);return t*t*(3-2*t)}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+
+const fibers=Array.from({length:PAIRS},(_,i)=>({
+  phase:hash(i*197+17)*Math.PI*2,
+  lean:(hash(i*313+29)-.5),
+  width:.75+1.55*hash(i*571+43),
+  warm:hash(i*739+61),
+  cool:hash(i*997+79)
+}));
+
+function resize(){
+  W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);D=Math.min(devicePixelRatio||1,1.8);
+  canvas.width=Math.floor(W*D);canvas.height=Math.floor(H*D);ctx.setTransform(D,0,0,D,0,0);
+  draw(performance.now());wake();
+}
+
+function geometry(i,now){
+  const f=fibers[i];
+  const x0=(i+.5)/PAIRS*W;
+  const minDim=Math.min(W,H);
+  const drift=prefersReduced?0:Math.sin(now*.00021+f.phase)*minDim*.010;
+  const seam=H*.5 + Math.sin(i*.81+f.phase)*H*.018 + drift*.32;
+  const px=pointer.x*W, py=pointer.y*H;
+  const dx=x0-px;
+  const reach=Math.max(W/PAIRS*4.7,minDim*.13);
+  const near=pointer.inside?Math.exp(-(dx*dx)/(reach*reach))*pointer.energy:0;
+  const baseGap=clamp(H*.084,42,88);
+  const minGap=clamp(H*.018,14,24);
+  const gap=baseGap-(baseGap-minGap)*near*.93;
+  const seamShift=near*(py-seam)*.15;
+  const attraction=near*(px-x0)*.20;
+  const tipX=x0+f.lean*W*.010+attraction;
+  const topY=seam+seamShift-gap*.5;
+  const bottomY=seam+seamShift+gap*.5;
+  return {x0,tipX,topY,bottomY,near,gap,seam:seam+seamShift};
+}
+
+function warmColor(v,a){
+  const r=Math.round(236+19*v),g=Math.round(72+91*v),b=Math.round(76+47*(1-v));
+  return `rgba(${r},${g},${b},${a})`;
+}
+function coolColor(v,a){
+  const r=Math.round(64+65*v),g=Math.round(156+79*(1-v)),b=Math.round(230+22*v);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function drawFiber(i,g,now){
+  const f=fibers[i];
+  const topCtrlY=H*.28;
+  const bottomCtrlY=H*.72;
+  const sway=(prefersReduced?0:Math.sin(now*.00034+f.phase)*W*.007);
+  const xMid=g.x0+sway+f.lean*W*.014;
+  const alpha=.24+g.near*.26;
+  const glow=.10+g.near*.16;
+
+  ctx.save();
+  ctx.lineCap='round';
+  ctx.globalCompositeOperation='screen';
+
+  ctx.shadowBlur=10+g.near*12;
+  ctx.shadowColor=warmColor(f.warm,.38);
+  ctx.strokeStyle=warmColor(f.warm,glow);
+  ctx.lineWidth=f.width*4.1;
+  ctx.beginPath();ctx.moveTo(g.x0,-8);ctx.bezierCurveTo(g.x0+sway*.45,topCtrlY,xMid,g.topY-H*.12,g.tipX,g.topY);ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle=warmColor(f.warm,alpha);
+  ctx.lineWidth=f.width;
+  ctx.beginPath();ctx.moveTo(g.x0,-8);ctx.bezierCurveTo(g.x0+sway*.45,topCtrlY,xMid,g.topY-H*.12,g.tipX,g.topY);ctx.stroke();
+
+  ctx.shadowBlur=10+g.near*12;
+  ctx.shadowColor=coolColor(f.cool,.38);
+  ctx.strokeStyle=coolColor(f.cool,glow);
+  ctx.lineWidth=f.width*4.1;
+  ctx.beginPath();ctx.moveTo(g.x0,H+8);ctx.bezierCurveTo(g.x0-sway*.35,bottomCtrlY,xMid,g.bottomY+H*.12,g.tipX,g.bottomY);ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle=coolColor(f.cool,alpha);
+  ctx.lineWidth=f.width;
+  ctx.beginPath();ctx.moveTo(g.x0,H+8);ctx.bezierCurveTo(g.x0-sway*.35,bottomCtrlY,xMid,g.bottomY+H*.12,g.tipX,g.bottomY);ctx.stroke();
+  ctx.restore();
+}
+
+function nearestIndex(x){return clamp(Math.round(x/W*PAIRS-.5),0,PAIRS-1)}
+
+function drawContacts(now,geoms){
+  ctx.save();ctx.globalCompositeOperation='screen';ctx.lineCap='round';
+  for(const c of contacts){
+    const age=now-c.born;if(age<0||age>CONTACT_MS)continue;
+    const t=age/CONTACT_MS;
+    const e=Math.pow(1-t,1.6);
+    const pulse=.72+.28*Math.sin(Math.PI*smooth(Math.min(1,t*1.9)));
+    const g=geoms[c.i];
+    const y1=g.topY,y2=g.bottomY,x=g.tipX;
+    ctx.shadowBlur=18*e;ctx.shadowColor='rgba(255,236,210,.9)';
+    ctx.strokeStyle=`rgba(255,243,224,${.82*e*pulse})`;ctx.lineWidth=1.15+1.5*e;
+    ctx.beginPath();ctx.moveTo(x,y1);ctx.quadraticCurveTo(x+c.bias*8,(y1+y2)*.5,x,y2);ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.fillStyle=`rgba(255,226,193,${.78*e})`;
+    ctx.beginPath();ctx.arc(x,(y1+y2)*.5,1.2+2.1*e,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+}
+
+function draw(now){
+  const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#160d1b');bg.addColorStop(.48,'#100b18');bg.addColorStop(.52,'#0c111c');bg.addColorStop(1,'#07131a');
+  ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  const geoms=new Array(PAIRS);
+  for(let i=0;i<PAIRS;i++){const g=geometry(i,now);geoms[i]=g;drawFiber(i,g,now)}
+
+  drawContacts(now,geoms);
+
+  const seam=ctx.createLinearGradient(0,H*.5-60,0,H*.5+60);
+  seam.addColorStop(0,'rgba(255,255,255,0)');seam.addColorStop(.5,'rgba(220,210,235,.018)');seam.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.globalCompositeOperation='screen';ctx.fillStyle=seam;ctx.fillRect(0,H*.5-60,W,120);
+
+  const vig=ctx.createRadialGradient(W*.5,H*.5,Math.min(W,H)*.15,W*.5,H*.5,Math.max(W,H)*.72);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.40)');
+  ctx.globalCompositeOperation='source-over';ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+}
+
+function frame(now){
+  raf=0;const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  pointer.x=damp(pointer.x,pointer.tx,dt,7.4);pointer.y=damp(pointer.y,pointer.ty,dt,7.4);
+  pointer.energy=damp(pointer.energy,pointer.inside?1:0,dt,pointer.inside?6.2:3.1);
+  for(let i=contacts.length-1;i>=0;i--)if(now-contacts[i].born>CONTACT_MS)contacts.splice(i,1);
+  draw(now);
+  raf=requestAnimationFrame(frame);
+}
+
+function contact(x){
+  const i=nearestIndex(x);
+  if(contacts.length>=MAX_CONTACTS)contacts.shift();
+  contacts.push({i,born:performance.now(),bias:hash((i+1)*1231+Math.floor(performance.now()))>.5?1:-1});
+}
+
+addEventListener('pointermove',e=>{pointer.tx=clamp(e.clientX/W,0,1);pointer.ty=clamp(e.clientY/H,0,1);pointer.inside=true;wake()},{passive:true});
+addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;pointer.tx=clamp(e.clientX/W,0,1);pointer.ty=clamp(e.clientY/H,0,1);pointer.inside=true;contact(e.clientX);wake()},{passive:true});
+addEventListener('pointerleave',()=>{pointer.inside=false;wake()},{passive:true});
+addEventListener('resize',resize,{passive:true});
+resize();
+})();
+</script>
+</body>
+</html>
