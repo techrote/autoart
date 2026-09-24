@@ -4,7 +4,7 @@
 
 A single-file, dependency-free generative artwork assembled from recurring ideas across the wider `techrote` repository set.
 
-Open `index.html` directly in a modern browser. No build step, package manager, server, external assets, telemetry, or network access is required.
+Open `0001-excavation_field.html` directly in a modern browser. No build step, package manager, server, external assets, telemetry, or network access is required.
 
 ### Controls
 
