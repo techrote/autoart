@@ -12,9 +12,9 @@ The governing question for this run is whether the anthology can treat colour, o
 
 **Oppositional.**
 
-\`Local Agreement\`, \`Mutual Horizon\` and \`The Weight of Looking\` form a strong recent run of pale or subdued fields, fine geometry, perceptual restraint and carefully bounded spatial arguments. \`Borrowed Heat\` deliberately leaves that register.
+`Local Agreement`, `Mutual Horizon` and `The Weight of Looking` form a strong recent run of pale or subdued fields, fine geometry, perceptual restraint and carefully bounded spatial arguments. `Borrowed Heat` deliberately leaves that register.
 
-It keeps one useful lesson from \`The Weight of Looking\`: mouse reactivity can be spatial and unlabeled without becoming interface chrome. Everything else changes. The ground is dark, colour is saturated, forms overlap heavily, motion is continuous, and the initial state is visually abundant rather than austere.
+It keeps one useful lesson from `The Weight of Looking`: mouse reactivity can be spatial and unlabeled without becoming interface chrome. Everything else changes. The ground is dark, colour is saturated, forms overlap heavily, motion is continuous, and the initial state is visually abundant rather than austere.
 
 ### Concept / intent
 
@@ -28,7 +28,7 @@ The title is deliberately ambiguous about ownership. The viewer appears to lend 
 
 ### Influences
 
-The immediate influence is the fatigue produced by AUTOART's recent austerity rather than a specific earlier visual motif. \`The Weight of Looking\` contributes the idea of unlabelled spatial mouse response, but this piece reverses its pressure logic: presence gathers material rather than repelling it.
+The immediate influence is the fatigue produced by AUTOART's recent austerity rather than a specific earlier visual motif. `The Weight of Looking` contributes the idea of unlabelled spatial mouse response, but this piece reverses its pressure logic: presence gathers material rather than repelling it.
 
 Loose visual associations include translucent film, stage gels, oil on dark water, overlapping silk, thermal imagery and light passing through coloured glass. No external artwork or asset is quoted.
 
@@ -38,7 +38,7 @@ The artwork uses a single full-screen Canvas 2D surface plus one fixed CSS grain
 
 Seventeen bands have fixed parameters for vertical position, thickness, phase, frequency, drift and colour. Their centre-lines are analytic sine combinations sampled across the current viewport. The pointer contributes a broad attractive field that bends nearby samples inward and increases local band thickness and opacity.
 
-Bands are drawn with \`screen\` compositing, so overlap creates additional colour rather than simply covering earlier layers. Click hollows are drawn afterward in ordinary compositing as expanding dark/cool radial fields, giving deliberate intervention a visibly different phenomenology from passive pointer warmth.
+Bands are drawn with `screen` compositing, so overlap creates additional colour rather than simply covering earlier layers. Click hollows are drawn afterward in ordinary compositing as expanding dark/cool radial fields, giving deliberate intervention a visibly different phenomenology from passive pointer warmth.
 
 The animation is continuous because autonomous drift is part of the material character rather than merely an idle decoration.
 
@@ -57,12 +57,12 @@ The initial state is complete, moving and saturated without interaction.
 - Seventeen fixed bands.
 - Click hollows are capped at five and expire after approximately 4.6 seconds.
 - Device-pixel ratio is capped at 1.7.
-- One continuous \`requestAnimationFrame\` chain; no accumulating frame history or generated DOM.
+- One continuous `requestAnimationFrame` chain; no accumulating frame history or generated DOM.
 - Resize analytically redraws the field for the new viewport.
 
 ### Validation performed
 
-The exact HTML prepared for publication was validated with the available Chromium engine by loading its complete document content into browser pages because administrator policy blocks literal \`file://\` navigation in this environment.
+The exact HTML prepared for publication was validated with the available Chromium engine by loading its complete document content into browser pages because administrator policy blocks literal `file://` navigation in this environment.
 
 Validation included:
 
@@ -77,12 +77,12 @@ Validation included:
 - DOM-count checks before and after sustained interaction;
 - a runtime sanity pass confirming fixed band count, bounded click state and no obvious frame collapse or unbounded allocation.
 
-Direct \`file://\` navigation was attempted separately and remains blocked by the managed Chromium policy. The artwork itself has no server or network dependency.
+Direct `file://` navigation was attempted separately and remains blocked by the managed Chromium policy. The artwork itself has no server or network dependency.
 
 ### Known limitations / deliberate unresolved qualities
 
 Because the bands use additive/screen overlap, display calibration affects the balance strongly: high-contrast displays may make intersections more neon, while low-contrast panels may compress the darker colour differences.
 
-Continuous motion means this piece intentionally gives up the computational stillness of \`The Weight of Looking\`. The motion is slow and analytic, but the work always spends some rendering effort while visible.
+Continuous motion means this piece intentionally gives up the computational stillness of `The Weight of Looking`. The motion is slow and analytic, but the work always spends some rendering effort while visible.
 
 The click hollows are deliberately more explicit than the pointer response. They may read as lenses or dark spot effects before they read as cooling; that semantic ambiguity is acceptable here because the visual role is primarily chromatic interruption.
