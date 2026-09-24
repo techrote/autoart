@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0002a — Mended Weather</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #e8e3d7; }
+  body { touch-action: none; }
+  svg { width: 100%; height: 100%; display: block; }
+  #field, #seam, #stitches, #drift, #glints { transform-box: fill-box; transform-origin: center; will-change: transform; }
+  #veil { pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) {
+    #field, #seam, #stitches, #drift, #glints { will-change: auto; }
+  }
+</style>
+</head>
+<body>
+<svg id="art" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mended Weather: a quiet abstract field divided by a stitched wandering seam">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eee9dd"/>
+      <stop offset="0.52" stop-color="#e5e0d5"/>
+      <stop offset="1" stop-color="#dad7cf"/>
+    </linearGradient>
+    <radialGradient id="warmth" cx="31%" cy="35%" r="72%">
+      <stop offset="0" stop-color="#f6d8bb" stop-opacity="0.48"/>
+      <stop offset="0.44" stop-color="#f1d7c1" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#f1d7c1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cool" cx="75%" cy="45%" r="76%">
+      <stop offset="0" stop-color="#9fb4bd" stop-opacity="0.44"/>
+      <stop offset="0.55" stop-color="#8da8b0" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#8da8b0" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="3" seed="17" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
+      <feComponentTransfer in="mono" result="faint">
+        <feFuncA type="table" tableValues="0 0.065"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="faint" mode="multiply"/>
+    </filter>
+    <filter id="threadShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.8" result="b"/>
+      <feOffset in="b" dx="0" dy="1.2" result="o"/>
+      <feColorMatrix in="o" type="matrix" values="0 0 0 0 0.19  0 0 0 0 0.15  0 0 0 0 0.10  0 0 0 .28 0" result="s"/>
+      <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="leftClip">
+      <path d="M0 0H640 C622 85 661 145 628 211 C593 280 646 331 618 401 C590 471 636 531 605 598 C579 653 611 722 594 800 H0Z"/>
+    </clipPath>
+    <clipPath id="rightClip">
+      <path d="M1200 0H640 C622 85 661 145 628 211 C593 280 646 331 618 401 C590 471 636 531 605 598 C579 653 611 722 594 800 H1200Z"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#paper)"/>
+
+  <g id="field" filter="url(#grain)">
+    <g clip-path="url(#leftClip)">
+      <rect width="1200" height="800" fill="url(#warmth)"/>
+      <ellipse cx="308" cy="284" rx="350" ry="205" fill="#f3c9ad" opacity="0.10" filter="url(#soft)"/>
+      <ellipse cx="225" cy="622" rx="300" ry="145" fill="#d9bca7" opacity="0.12" filter="url(#soft)"/>
+      <path d="M-70 505 C146 438 246 496 423 453 C518 430 579 446 628 422 L628 760 L-70 760Z" fill="#eee5d4" opacity="0.38"/>
+    </g>
+    <g clip-path="url(#rightClip)">
+      <rect width="1200" height="800" fill="url(#cool)"/>
+      <ellipse cx="902" cy="254" rx="370" ry="228" fill="#8ea9b2" opacity="0.12" filter="url(#soft)"/>
+      <ellipse cx="1008" cy="623" rx="335" ry="170" fill="#c9d1cf" opacity="0.20" filter="url(#soft)"/>
+      <path d="M613 128 C786 176 852 129 1036 182 C1113 204 1160 201 1270 180 L1270 0 L631 0Z" fill="#dce0dc" opacity="0.27"/>
+    </g>
+  </g>
+
+  <g id="drift" opacity="0.48">
+    <path d="M82 175 C276 129 374 154 545 119" fill="none" stroke="#8f8174" stroke-width="1" opacity="0.15"/>
+    <path d="M718 670 C892 631 1007 644 1146 605" fill="none" stroke="#647780" stroke-width="1" opacity="0.15"/>
+    <circle cx="178" cy="150" r="2.2" fill="#8f8174" opacity="0.36"/>
+    <circle cx="328" cy="139" r="1.5" fill="#8f8174" opacity="0.26"/>
+    <circle cx="474" cy="128" r="2.6" fill="#8f8174" opacity="0.22"/>
+    <circle cx="778" cy="657" r="2.4" fill="#647780" opacity="0.25"/>
+    <circle cx="941" cy="646" r="1.6" fill="#647780" opacity="0.32"/>
+    <circle cx="1091" cy="620" r="2.1" fill="#647780" opacity="0.24"/>
+  </g>
+
+  <g id="seam">
+    <path d="M640 -20 C621 74 660 145 628 211 C594 281 646 331 618 401 C590 471 636 531 605 598 C579 653 611 722 594 820" fill="none" stroke="#766b5e" stroke-width="4.4" opacity="0.08"/>
+    <path d="M640 -20 C621 74 660 145 628 211 C594 281 646 331 618 401 C590 471 636 531 605 598 C579 653 611 722 594 820" fill="none" stroke="#6d6256" stroke-width="1.05" opacity="0.62" stroke-linecap="round"/>
+  </g>
+
+  <g id="stitches" filter="url(#threadShadow)" aria-hidden="true">
+    <g stroke="#b18a54" stroke-width="2.2" stroke-linecap="round" opacity="0.76">
+      <path d="M616 62 L651 69"/><path d="M617 103 L651 109"/><path d="M618 147 L650 154"/>
+      <path d="M604 196 L640 204"/><path d="M601 242 L636 250"/><path d="M611 288 L647 295"/>
+      <path d="M607 336 L642 344"/><path d="M598 384 L635 392"/><path d="M596 431 L633 439"/>
+      <path d="M602 480 L638 487"/><path d="M596 528 L632 536"/><path d="M587 574 L623 582"/>
+      <path d="M580 620 L616 628"/><path d="M579 667 L615 674"/><path d="M586 714 L619 721"/>
+      <path d="M580 758 L610 765"/>
+    </g>
+    <g fill="#7b6245" opacity="0.32">
+      <circle cx="616" cy="62" r="2.4"/><circle cx="651" cy="69" r="2.4"/>
+      <circle cx="604" cy="196" r="2.2"/><circle cx="640" cy="204" r="2.2"/>
+      <circle cx="598" cy="384" r="2.4"/><circle cx="635" cy="392" r="2.4"/>
+      <circle cx="596" cy="528" r="2.3"/><circle cx="632" cy="536" r="2.3"/>
+      <circle cx="579" cy="667" r="2.2"/><circle cx="615" cy="674" r="2.2"/>
+    </g>
+  </g>
+
+  <g id="glints" fill="none" stroke-linecap="round">
+    <path d="M406 301 C467 286 512 293 553 274" stroke="#fff9ec" stroke-width="2" opacity="0.20"/>
+    <path d="M756 444 C812 427 867 432 914 416" stroke="#f5f7f2" stroke-width="1.6" opacity="0.20"/>
+    <path d="M238 555 C304 537 361 541 416 521" stroke="#fff9ec" stroke-width="1.5" opacity="0.15"/>
+  </g>
+
+  <rect id="veil" width="1200" height="800" fill="none" stroke="#5b554c" stroke-width="28" opacity="0.035"/>
+</svg>
+<script>
+(() => {
+  'use strict';
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const field = document.getElementById('field');
+  const seam = document.getElementById('seam');
+  const stitches = document.getElementById('stitches');
+  const drift = document.getElementById('drift');
+  const glints = document.getElementById('glints');
+  let tx = 0, ty = 0, cx = 0, cy = 0;
+  let start = performance.now();
+
+  function point(e) {
+    tx = (e.clientX / Math.max(innerWidth, 1) - 0.5) * 2;
+    ty = (e.clientY / Math.max(innerHeight, 1) - 0.5) * 2;
+  }
+  addEventListener('pointermove', point, {passive:true});
+  addEventListener('pointerleave', () => { tx = 0; ty = 0; }, {passive:true});
+
+  function frame(now) {
+    cx += (tx - cx) * 0.025;
+    cy += (ty - cy) * 0.025;
+    const t = (now - start) / 1000;
+    const breathe = reduced ? 0 : Math.sin(t * Math.PI / 12);
+    const driftPhase = reduced ? 0 : Math.sin(t * Math.PI / 18);
+
+    field.style.transform = `translate(${(-cx * 2.2).toFixed(2)}px, ${(-cy * 1.7).toFixed(2)}px)`;
+    seam.style.transform = `translate(${(cx * 1.0 + breathe * 0.65).toFixed(2)}px, ${(cy * 0.7).toFixed(2)}px)`;
+    stitches.style.transform = `translate(${(cx * 1.35 + breathe * 0.9).toFixed(2)}px, ${(cy * 0.9).toFixed(2)}px)`;
+    drift.style.transform = `translate(${(cx * 2.6 + driftPhase * 2.2).toFixed(2)}px, ${(cy * 1.4).toFixed(2)}px)`;
+    glints.style.transform = `translate(${(-cx * 3.2).toFixed(2)}px, ${(-cy * 1.9).toFixed(2)}px)`;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
