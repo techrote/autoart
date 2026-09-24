@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0012 — Right of Way</title>
+<style>
+:root{color-scheme:light;background:#ece7dc}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#ece7dc}
+body{touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+</style>
+</head>
+<body aria-label="Right of Way. Curving woven ribbons negotiate foreground order; pointer proximity softens local precedence and clicks temporarily reverse a nearby crossing.">
+<canvas id="art"></canvas>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HN=8,VN=7,MAX_CLAIMS=3,CLAIM_MS=5600;
+const BG=[236,231,220];
+const HCOL=['#315b73','#3d7184','#4c8391','#5b8f96','#4a7584','#376474','#527f88','#416d7a'];
+const VCOL=['#c56d4e','#d18155','#d89959','#c97950','#b95e49','#d28a58','#c9704f'];
+let W=1,H=1,DPR=1,h=[],v=[],crossings=[],raf=0,last=performance.now();
+const pointer={x:.5,y:.5,tx:.5,ty:.5,strength:0,target:0};
+let claims=[];
+function clamp(x,a,b){return x<a?a:x>b?b:x}
+function lerp(a,b,t){return a+(b-a)*t}
+function smooth(t){t=clamp(t,0,1);return t*t*(3-2*t)}
+function damp(a,b,dt,k){return a+(b-a)*(1-Math.exp(-k*dt))}
+function hY(r,x){const q=h[r];return q.base+Math.sin(x*q.f1+q.p1)*q.a1+Math.sin(x*q.f2+q.p2)*q.a2}
+function vX(c,y){const q=v[c];return q.base+Math.sin(y*q.f1+q.p1)*q.a1+Math.sin(y*q.f2+q.p2)*q.a2}
+function hSlope(r,x){const e=2;return(hY(r,x+e)-hY(r,x-e))/(2*e)}
+function build(){
+h=[];v=[];crossings=[];
+const mx=Math.max(34,W*.055),my=Math.max(32,H*.06);
+for(let i=0;i<HN;i++){const t=(i+.5)/HN;h.push({base:lerp(my,H-my,t),a1:8+((i*7)%5)*2.2,a2:4+((i*3)%4)*1.3,f1:.0054+.00031*i,f2:.0101+.00019*i,p1:i*1.137+.4,p2:i*2.021+1.2,w:16+(i%3)*2.2})}
+for(let j=0;j<VN;j++){const t=(j+.5)/VN;v.push({base:lerp(mx,W-mx,t),a1:8+((j*5)%4)*2.4,a2:3.5+((j*2)%5)*1.1,f1:.0051+.00028*j,f2:.0094+.00022*j,p1:j*1.411+.7,p2:j*2.207+.2,w:17+(j%3)*2})}
+for(let i=0;i<HN;i++)for(let j=0;j<VN;j++){let x=v[j].base,y=h[i].base;for(let k=0;k<6;k++){y=hY(i,x);x=vX(j,y)}crossings.push({i,j,x,y,base:((i+j)&1)?0:1,id:i*VN+j})}
+}
+function resize(){W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);DPR=Math.min(devicePixelRatio||1,1.75);canvas.width=Math.max(1,Math.floor(W*DPR));canvas.height=Math.max(1,Math.floor(H*DPR));ctx.setTransform(DPR,0,0,DPR,0,0);ctx.lineCap='round';ctx.lineJoin='round';build();render(performance.now())}
+function traceH(i,from=0,to=W,step=18){ctx.beginPath();for(let x=from,n=0;x<=to+step;x+=step,n++){const xx=Math.min(x,to),y=hY(i,xx);if(!n)ctx.moveTo(xx,y);else ctx.lineTo(xx,y)}}
+function traceV(j,from=0,to=H,step=18){ctx.beginPath();for(let y=from,n=0;y<=to+step;y+=step,n++){const yy=Math.min(y,to),x=vX(j,yy);if(!n)ctx.moveTo(x,yy);else ctx.lineTo(x,yy)}}
+function drawBase(){
+ctx.fillStyle='rgb('+BG[0]+','+BG[1]+','+BG[2]+')';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.globalAlpha=.08;ctx.strokeStyle='#6e6257';ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(W*.06,H*.14);ctx.bezierCurveTo(W*.32,H*.08,W*.68,H*.23,W*.94,H*.15);ctx.stroke();
+ctx.beginPath();ctx.moveTo(W*.05,H*.84);ctx.bezierCurveTo(W*.37,H*.91,W*.67,H*.76,W*.96,H*.86);ctx.stroke();ctx.restore();
+ctx.save();ctx.globalAlpha=.12;ctx.strokeStyle='#3a312b';
+for(let i=0;i<HN;i++){ctx.lineWidth=h[i].w+5;ctx.save();ctx.translate(3,4);traceH(i);ctx.stroke();ctx.restore()}
+for(let j=0;j<VN;j++){ctx.lineWidth=v[j].w+5;ctx.save();ctx.translate(3,4);traceV(j);ctx.stroke();ctx.restore()}
+ctx.restore();
+for(let i=0;i<HN;i++){ctx.strokeStyle=HCOL[i];ctx.lineWidth=h[i].w;traceH(i);ctx.stroke()}
+for(let j=0;j<VN;j++){ctx.strokeStyle=VCOL[j];ctx.lineWidth=v[j].w;traceV(j);ctx.stroke()}
+}
+function claimFor(id,now){let best=0;for(const c of claims)if(c.id===id){const t=clamp((now-c.born)/CLAIM_MS,0,1);best=Math.max(best,1-smooth(t))}return best}
+function drawCrossings(now){
+const px=pointer.x*W,py=pointer.y*H,rad=Math.max(95,Math.min(W,H)*.19);
+for(const c of crossings){
+const d=Math.hypot(c.x-px,c.y-py);
+const near=pointer.strength*smooth(1-clamp(d/rad,0,1));
+let hWeight=lerp(c.base,.5,near);
+const claim=claimFor(c.id,now);hWeight=lerp(hWeight,1-c.base,claim);
+if(hWeight<.015)continue;
+const len=34+Math.max(h[c.i].w,v[c.j].w)*.85;
+const ang=Math.atan2(hSlope(c.i,c.x),1);
+ctx.save();ctx.translate(c.x,c.y);ctx.rotate(ang);
+const cover=clamp((hWeight-.44)/.56,0,1);
+if(cover>0){
+ctx.globalAlpha=cover*.96;ctx.strokeStyle='rgb('+BG[0]+','+BG[1]+','+BG[2]+')';ctx.lineWidth=h[c.i].w+8;ctx.beginPath();ctx.moveTo(-len,0);ctx.lineTo(len,0);ctx.stroke();
+ctx.globalAlpha=cover*.12;ctx.strokeStyle='#392f29';ctx.lineWidth=h[c.i].w+5;ctx.save();ctx.translate(2.5,3.5);ctx.beginPath();ctx.moveTo(-len,0);ctx.lineTo(len,0);ctx.stroke();ctx.restore();
+}
+ctx.globalAlpha=hWeight;ctx.strokeStyle=HCOL[c.i];ctx.lineWidth=h[c.i].w;ctx.beginPath();ctx.moveTo(-len,0);ctx.lineTo(len,0);ctx.stroke();
+if(claim>.02){ctx.globalAlpha=claim*.34;ctx.strokeStyle='#fffaf0';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(0,0,Math.max(h[c.i].w,v[c.j].w)*.82,0,Math.PI*2);ctx.stroke()}
+ctx.restore();
+}}
+function render(now){drawBase();drawCrossings(now)}
+function hasLiveClaims(now){claims=claims.filter(c=>now-c.born<CLAIM_MS);return claims.length>0}
+function settled(){return Math.abs(pointer.x-pointer.tx)<.0004&&Math.abs(pointer.y-pointer.ty)<.0004&&Math.abs(pointer.strength-pointer.target)<.002}
+function frame(now){raf=0;const dt=Math.min(.05,(now-last)/1000||0);last=now;const k=reduced?20:9;pointer.x=damp(pointer.x,pointer.tx,dt,k);pointer.y=damp(pointer.y,pointer.ty,dt,k);pointer.strength=damp(pointer.strength,pointer.target,dt,k);const live=hasLiveClaims(now);render(now);if(!settled()||live)raf=requestAnimationFrame(frame)}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function pos(e){return{x:clamp(e.clientX/Math.max(1,W),0,1),y:clamp(e.clientY/Math.max(1,H),0,1)}}
+addEventListener('pointermove',e=>{const p=pos(e);pointer.tx=p.x;pointer.ty=p.y;pointer.target=1;wake()},{passive:true});
+addEventListener('pointerdown',e=>{
+if(e.button!==undefined&&e.button!==0)return;
+const p=pos(e);pointer.tx=p.x;pointer.ty=p.y;pointer.target=1;
+const x=p.x*W,y=p.y*H;let best=null,bd=Infinity;
+for(const c of crossings){const d=(c.x-x)**2+(c.y-y)**2;if(d<bd){bd=d;best=c}}
+if(best&&Math.sqrt(bd)<Math.max(120,Math.min(W,H)*.24)){claims=claims.filter(c=>c.id!==best.id);claims.push({id:best.id,born:performance.now()});if(claims.length>MAX_CLAIMS)claims.shift()}
+wake();
+},{passive:true});
+document.documentElement.addEventListener('pointerleave',()=>{pointer.target=0;wake()},{passive:true});
+addEventListener('resize',()=>{resize();wake()},{passive:true});
+resize();
+})();
+</script>
+</body>
+</html>
