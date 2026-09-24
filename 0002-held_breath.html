@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0002 — Held Breath</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #f4f1e9;
+    --ink: #2a2926;
+    --warm: #a64f34;
+    --pressure: 0;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--paper);
+  }
+
+  body {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+
+  #field {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background:
+      radial-gradient(circle at 51% 48%, rgba(255,255,255,.70), rgba(255,255,255,0) 44%),
+      linear-gradient(180deg, rgba(255,255,255,.12), rgba(80,68,52,.015));
+  }
+
+  .hair {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    shape-rendering: geometricPrecision;
+  }
+
+  #outer {
+    stroke: rgba(42,41,38,.28);
+    stroke-width: .78;
+  }
+
+  #inner {
+    stroke: rgba(42,41,38,.16);
+    stroke-width: .62;
+  }
+
+  #suspended {
+    stroke: rgba(42,41,38,.32);
+    stroke-width: .66;
+    stroke-linecap: round;
+  }
+
+  #tick {
+    stroke: rgba(42,41,38,.18);
+    stroke-width: .58;
+    stroke-linecap: round;
+  }
+
+  #point {
+    fill: var(--warm);
+    opacity: .82;
+  }
+
+  #halo {
+    fill: none;
+    stroke: rgba(166,79,52,.09);
+    stroke-width: .7;
+    vector-effect: non-scaling-stroke;
+    opacity: calc(var(--pressure) * .92);
+  }
+
+  #quiet {
+    position: fixed;
+    left: 16px;
+    bottom: 14px;
+    font: 9px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(42,41,38,.22);
+    opacity: 0;
+    transition: opacity 900ms ease;
+    pointer-events: none;
+  }
+
+  body:focus-within #quiet,
+  body.paused #quiet {
+    opacity: 1;
+  }
+
+  @media (max-width: 640px) {
+    #quiet { left: 10px; bottom: 9px; font-size: 8px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #field { transform: none !important; }
+  }
+</style>
+</head>
+<body tabindex="0" aria-label="Held Breath. Press and hold to exhale. Press Space to freeze or resume.">
+<svg id="field" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title desc">
+  <title id="title">AUTOART 0002 — Held Breath</title>
+  <desc id="desc">A pale field containing two fine rectangular frames, a suspended line, and a tiny warm point. Holding the pointer causes one subtle exhale.</desc>
+
+  <g id="chamber">
+    <rect id="outer" class="hair" x="222" y="147" width="556" height="406" rx="1.4"/>
+    <rect id="inner" class="hair" x="314" y="219" width="372" height="262" rx=".9"/>
+    <line id="suspended" class="hair" x1="500" y1="219" x2="500" y2="327"/>
+    <line id="tick" class="hair" x1="486" y1="481" x2="514" y2="481"/>
+    <circle id="halo" cx="515" cy="347" r="19"/>
+    <circle id="point" cx="515" cy="347" r="2.35"/>
+  </g>
+</svg>
+<div id="quiet">space — freeze / resume</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const root = document.documentElement;
+  const body = document.body;
+  const chamber = document.getElementById('chamber');
+  const outer = document.getElementById('outer');
+  const inner = document.getElementById('inner');
+  const suspended = document.getElementById('suspended');
+  const point = document.getElementById('point');
+  const halo = document.getElementById('halo');
+
+  let targetPressure = 0;
+  let pressure = 0;
+  let paused = false;
+  let frozenT = 0;
+  let pauseStarted = 0;
+  let pausedDuration = 0;
+
+  function setPress(on) {
+    targetPressure = on ? 1 : 0;
+  }
+
+  addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    setPress(true);
+    try { body.setPointerCapture(e.pointerId); } catch (_) {}
+  }, { passive: true });
+
+  addEventListener('pointerup', () => setPress(false), { passive: true });
+  addEventListener('pointercancel', () => setPress(false), { passive: true });
+  addEventListener('blur', () => setPress(false));
+
+  addEventListener('keydown', e => {
+    if (e.code !== 'Space') return;
+    e.preventDefault();
+    paused = !paused;
+    body.classList.toggle('paused', paused);
+
+    if (paused) {
+      pauseStarted = performance.now();
+      frozenT = pauseStarted - pausedDuration;
+    } else {
+      pausedDuration += performance.now() - pauseStarted;
+    }
+  });
+
+  function frame(now) {
+    const tms = paused ? frozenT : now - pausedDuration;
+    const t = tms / 1000;
+
+    pressure += (targetPressure - pressure) * (targetPressure > pressure ? .045 : .022);
+    if (Math.abs(targetPressure - pressure) < .00005) pressure = targetPressure;
+    root.style.setProperty('--pressure', pressure.toFixed(4));
+
+    const breath = Math.sin(t * Math.PI * 2 / 41);
+    const drift = Math.sin(t * Math.PI * 2 / 67 + 1.3);
+    const open = breath * .0018 + pressure * .0125;
+    const sx = 1 + open;
+    const sy = 1 + open * .72;
+
+    chamber.setAttribute('transform',
+      'translate(500 350) scale(' + sx.toFixed(6) + ' ' + sy.toFixed(6) + ') translate(-500 -350)'
+    );
+
+    const outerInset = pressure * 3.2;
+    outer.setAttribute('x', (222 - outerInset).toFixed(3));
+    outer.setAttribute('y', (147 - outerInset * .55).toFixed(3));
+    outer.setAttribute('width', (556 + outerInset * 2).toFixed(3));
+    outer.setAttribute('height', (406 + outerInset * 1.1).toFixed(3));
+
+    const innerInset = pressure * 1.45;
+    inner.setAttribute('x', (314 - innerInset).toFixed(3));
+    inner.setAttribute('y', (219 - innerInset * .7).toFixed(3));
+    inner.setAttribute('width', (372 + innerInset * 2).toFixed(3));
+    inner.setAttribute('height', (262 + innerInset * 1.4).toFixed(3));
+
+    const py = 347 + drift * 1.8 + pressure * 5.6;
+    const px = 515 + breath * 1.1;
+    point.setAttribute('cx', px.toFixed(3));
+    point.setAttribute('cy', py.toFixed(3));
+    point.setAttribute('opacity', (0.82 - pressure * .29).toFixed(3));
+
+    halo.setAttribute('cx', px.toFixed(3));
+    halo.setAttribute('cy', py.toFixed(3));
+    halo.setAttribute('r', (19 + pressure * 31).toFixed(3));
+
+    suspended.setAttribute('y2', (327 + pressure * 7.5).toFixed(3));
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
