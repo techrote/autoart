@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 001 — Excavation Field</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #020307; }
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: #020307; }
+  #veil {
+    position: fixed; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(circle at 67% 48%, transparent 0 18%, rgba(2,3,7,.035) 46%, rgba(2,3,7,.18) 94%),
+      linear-gradient(180deg, rgba(255,255,255,.015), transparent 28%, rgba(0,0,0,.12));
+    mix-blend-mode: normal;
+  }
+  #hud {
+    position: fixed; left: 18px; top: 15px; z-index: 2; pointer-events: none;
+    color: rgba(225,236,255,.74); font-size: 11px; line-height: 1.45; letter-spacing: .08em;
+    text-transform: uppercase; text-shadow: 0 0 14px rgba(100,190,255,.12);
+    transition: opacity .2s ease;
+  }
+  #hud b { color: rgba(255,255,255,.92); font-weight: 600; }
+  #hud .dim { opacity: .52; }
+  #hud.off { opacity: 0; }
+  #keys {
+    position: fixed; right: 16px; bottom: 14px; z-index: 2; pointer-events: none;
+    color: rgba(214,222,238,.34); font-size: 10px; letter-spacing: .05em;
+    transition: opacity .2s ease;
+  }
+  #keys.off { opacity: 0; }
+  #flash {
+    position: fixed; inset: 0; pointer-events: none; opacity: 0;
+    background: rgba(216,239,255,.12); transition: opacity .22s ease;
+  }
+  @media (max-width: 640px) {
+    #hud { left: 11px; top: 10px; font-size: 9px; }
+    #keys { right: 10px; bottom: 9px; font-size: 8px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="art" aria-label="Animated generative artwork titled Excavation Field"></canvas>
+<div id="veil"></div>
+<div id="hud"><b>AUTOART 001</b> // EXCAVATION FIELD<br><span class="dim" id="state">canonical seed 0xA17F2026 · fixed step</span></div>
+<div id="keys">SPACE pause · R reseed · S png · H interface · pointer perturbs</div>
+<div id="flash"></div>
+<script>
+(() => {
+  'use strict';
+
+  // AUTOART 001 — EXCAVATION FIELD
+  // A deterministic, local-first generative piece built from fields, deposition,
+  // controlled faults, sparse scheduling, cycloidal/toolpath geometry, terminal
+  // quantisation and a deliberately restrained dark-bloom palette.
+
+  const canvas = document.getElementById('art');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const trails = document.createElement('canvas');
+  const tctx = trails.getContext('2d', { alpha: true });
+  const hud = document.getElementById('hud');
+  const keys = document.getElementById('keys');
+  const stateEl = document.getElementById('state');
+  const flash = document.getElementById('flash');
+
+  const BASE_SEED = 0xA17F2026 >>> 0;
+  const STEP = 1 / 60;
+  const PALETTE = [
+    [102, 232, 255], // spectral cyan
+    [255,  78, 207], // fault magenta
+    [255, 187,  93], // machined amber
+    [164, 255, 177], // cellular green
+    [196, 177, 255], // violet frost
+    [231, 237, 255]  // terminal white
+  ];
+
+  let W = 1, H = 1, DPR = 1;
+  let seed = BASE_SEED;
+  let rng = makeRng(seed);
+  let particles = [];
+  let branches = [];
+  let toolpaths = [];
+  let glyphCells = [];
+  let tick = 0;
+  let accumulator = 0;
+  let last = performance.now();
+  let paused = false;
+  let showUI = true;
+  let pointer = { x: 0, y: 0, active: false, strength: 0 };
+
+  function makeRng(s) {
+    let a = s >>> 0;
+    return function rand() {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function hash32(x) {
+    x = (x ^ (x >>> 16)) >>> 0;
+    x = Math.imul(x, 0x7feb352d) >>> 0;
+    x = (x ^ (x >>> 15)) >>> 0;
+    x = Math.imul(x, 0x846ca68b) >>> 0;
+    return (x ^ (x >>> 16)) >>> 0;
+  }
+
+  function randRange(a, b) { return a + (b - a) * rng(); }
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  function mix(a, b, t) { return a + (b - a) * t; }
+
+  function resize() {
+    W = Math.max(1, innerWidth);
+    H = Math.max(1, innerHeight);
+    DPR = Math.min(devicePixelRatio || 1, 1.6);
+    const bw = Math.max(1, Math.floor(W * DPR));
+    const bh = Math.max(1, Math.floor(H * DPR));
+    if (canvas.width === bw && canvas.height === bh) return;
+
+    canvas.width = trails.width = bw;
+    canvas.height = trails.height = bh;
+    canvas.style.width = trails.style.width = W + 'px';
+    canvas.style.height = trails.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    tctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    tctx.imageSmoothingEnabled = true;
+    rebuild();
+  }
+
+  function rebuild() {
+    rng = makeRng(seed);
+    tick = 0;
+    pointer.strength = 0;
+    tctx.setTransform(1,0,0,1,0,0);
+    tctx.clearRect(0, 0, trails.width, trails.height);
+    tctx.setTransform(DPR,0,0,DPR,0,0);
+
+    const area = W * H;
+    const count = clamp(Math.floor(area / 900), 700, 1900);
+    particles = new Array(count);
+    for (let i = 0; i < count; i++) particles[i] = spawnParticle(i, true);
+
+    branches = makeBranches();
+    toolpaths = makeToolpaths();
+    glyphCells = makeGlyphCells();
+    stateEl.textContent = `canonical seed 0x${seed.toString(16).toUpperCase().padStart(8,'0')} · fixed step`;
+
+    // Arrive as an already-running world rather than an empty boot screen.
+    // This is deterministic fixed-step history, not a random visual warm-up.
+    for (let i = 0; i < 180; i++) simulate();
+  }
+
+  function spawnParticle(id, initial = false) {
+    const edgeBias = rng();
+    let x, y;
+    if (edgeBias < .42) {
+      x = rng() < .5 ? randRange(-30, W * .18) : randRange(W * .82, W + 30);
+      y = randRange(-20, H + 20);
+    } else if (edgeBias < .78) {
+      x = randRange(-20, W + 20);
+      y = rng() < .5 ? randRange(-20, H * .16) : randRange(H * .84, H + 20);
+    } else {
+      x = randRange(W * .05, W * .95);
+      y = randRange(H * .05, H * .95);
+    }
+    return {
+      id,
+      x, y,
+      px: x, py: y,
+      vx: randRange(-.16, .16),
+      vy: randRange(-.16, .16),
+      age: initial ? Math.floor(rng() * 1200) : 0,
+      life: Math.floor(randRange(600, 2600)),
+      speed: randRange(.40, 1.28),
+      width: randRange(.32, 1.25),
+      chroma: Math.floor(rng() * PALETTE.length),
+      phase: rng() * Math.PI * 2,
+      kind: rng()
+    };
+  }
+
+  function fieldAt(x, y, t, p) {
+    const nx = (x / Math.max(W,1) - .5) * 2;
+    const ny = (y / Math.max(H,1) - .5) * 2;
+
+    // Slowly evolving interference field: plasma-like complexity without random flicker.
+    const q =
+      Math.sin(nx * 4.7 + t * .055) +
+      Math.cos(ny * 6.2 - t * .041) +
+      .55 * Math.sin((nx + ny) * 9.1 + t * .028) +
+      .34 * Math.cos((nx * 1.8 - ny * 2.7) * 5.4 - t * .021);
+
+    let fx = Math.cos(q * 1.17 + ny * 2.4);
+    let fy = Math.sin(q * 1.23 - nx * 2.0);
+
+    // Central excavated void: flow wraps around it instead of filling it.
+    const cx = W * .665;
+    const cy = H * .49;
+    const minD = Math.min(W, H);
+    const rx = minD * .145;
+    const ry = minD * .108;
+    const dx = (x - cx) / rx;
+    const dy = (y - cy) / ry;
+    const er = Math.sqrt(dx*dx + dy*dy) + .0001;
+    const halo = Math.exp(-Math.pow((er - 1.16) / .52, 2));
+    fx += (-dy / er) * halo * 2.3;
+    fy += ( dx / er) * halo * 1.75;
+    if (er < 1.05) {
+      const push = (1.05 - er) * 5.2;
+      fx += (dx / er) * push;
+      fy += (dy / er) * push;
+    }
+
+    // A faint downward material bias on part of the population.
+    if (p.kind < .18) fy += .58;
+
+    // Pointer behaves like a temporary tool head, but fades back to canonical motion.
+    if (pointer.strength > .001) {
+      const pdx = x - pointer.x;
+      const pdy = y - pointer.y;
+      const pr2 = pdx*pdx + pdy*pdy + 180;
+      const reach = Math.min(W,H) * .24;
+      const a = Math.exp(-pr2 / (reach * reach)) * pointer.strength;
+      fx += (-pdy / Math.sqrt(pr2)) * a * 3.0;
+      fy += ( pdx / Math.sqrt(pr2)) * a * 3.0;
+    }
+
+    return [fx, fy];
+  }
+
+  function simulate() {
+    const t = tick * STEP;
+    pointer.strength *= .982;
+
+    tctx.save();
+    tctx.globalCompositeOperation = 'source-over';
+    tctx.fillStyle = 'rgba(2,3,7,0.012)';
+    tctx.fillRect(0, 0, W, H);
+    tctx.globalCompositeOperation = 'lighter';
+
+    for (let i = 0; i < particles.length; i++) {
+      let p = particles[i];
+      p.px = p.x; p.py = p.y;
+      const f = fieldAt(p.x, p.y, t + p.phase * .015, p);
+
+      const inertia = p.kind < .18 ? .90 : .935;
+      p.vx = p.vx * inertia + f[0] * .074 * p.speed;
+      p.vy = p.vy * inertia + f[1] * .074 * p.speed;
+
+      const mag = Math.hypot(p.vx, p.vy) || 1;
+      const maxV = 2.1 * p.speed + .9;
+      if (mag > maxV) { p.vx *= maxV / mag; p.vy *= maxV / mag; }
+
+      p.x += p.vx;
+      p.y += p.vy;
+      p.age++;
+
+      const c = PALETTE[p.chroma];
+      const speedAlpha = clamp(Math.hypot(p.vx,p.vy) / 2.6, .12, 1);
+      const alpha = (.045 + .22 * speedAlpha) * (p.kind < .18 ? .75 : 1);
+
+      if ((i & 7) === 0) {
+        tctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha*.21})`;
+        tctx.lineWidth = p.width * 5.5;
+        tctx.beginPath(); tctx.moveTo(p.px,p.py); tctx.lineTo(p.x,p.y); tctx.stroke();
+      }
+
+      tctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+      tctx.lineWidth = p.width;
+      tctx.beginPath(); tctx.moveTo(p.px,p.py); tctx.lineTo(p.x,p.y); tctx.stroke();
+
+      // Sparse deposition cells — visible evidence of work rather than full-screen noise.
+      if (((p.id + tick) & 31) === 0) {
+        const g = Math.max(3, Math.min(W,H) / 170);
+        const sx = Math.round(p.x / g) * g;
+        const sy = Math.round(p.y / g) * g;
+        tctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha*.55})`;
+        tctx.fillRect(sx, sy, g * .48, g * .48);
+      }
+
+      const out = p.x < -70 || p.x > W + 70 || p.y < -70 || p.y > H + 70;
+      if (out || p.age > p.life) particles[i] = spawnParticle(p.id, false);
+    }
+    tctx.restore();
+    tick++;
+  }
+
+  function makeBranches() {
+    const list = [];
+    const cx = W * .665, cy = H * .49;
+    const baseR = Math.min(W,H) * .125;
+    const local = makeRng(hash32(seed ^ 0xB12A7C55));
+
+    function grow(x, y, a, len, depth, parent) {
+      if (depth <= 0 || len < 4) return;
+      const wobble = (local() - .5) * .42;
+      const a2 = a + wobble;
+      const x2 = x + Math.cos(a2) * len;
+      const y2 = y + Math.sin(a2) * len;
+      const node = { x1:x, y1:y, x2, y2, depth, parent, salt:local() };
+      list.push(node);
+      if (depth > 1) {
+        grow(x2, y2, a2 + (local()-.5)*.28, len * randLocal(local,.71,.87), depth-1, node);
+        if (local() < .58) grow(x2, y2, a2 + (local()<.5?-1:1)*randLocal(local,.28,.63), len * randLocal(local,.46,.68), depth-2, node);
+      }
+    }
+
+    const roots = 9;
+    for (let i=0;i<roots;i++) {
+      const a = (i/roots)*Math.PI*2 + randLocal(local,-.16,.16);
+      const x = cx + Math.cos(a)*baseR;
+      const y = cy + Math.sin(a)*baseR*.78;
+      grow(x, y, a + randLocal(local,-.30,.30), Math.min(W,H)*randLocal(local,.055,.11), 7, null);
+    }
+    return list;
+  }
+
+  function randLocal(r, a, b) { return a + (b-a)*r(); }
+
+  function makeToolpaths() {
+    const local = makeRng(hash32(seed ^ 0xC70D1D));
+    const paths = [];
+
+    // Cycloidal cut — a nod to the brachistochrone and to machining trajectories.
+    const cyc = [];
+    const turns = 3.25;
+    for (let i=0;i<=300;i++) {
+      const th = (i/300) * Math.PI * 2 * turns;
+      const rawX = th - Math.sin(th);
+      const rawY = 1 - Math.cos(th);
+      const nx = rawX / (Math.PI*2*turns);
+      const x = W * (.07 + nx * .49);
+      const y = H * (.79 - rawY * .055 - nx * .12);
+      cyc.push([x,y]);
+    }
+    paths.push({ pts:cyc, alpha:.34, width:.66, dash:[2,7], color:[255,187,93], speed:.22 });
+
+    // Hilbert-like plane path: ordered coverage without reading as a decorative grid.
+    const order = W < 700 ? 4 : 5;
+    const n = 1 << order;
+    const hil = [];
+    for (let d=0; d<n*n; d++) {
+      const [hx,hy] = hilbert(d, order);
+      const s = Math.min(W,H) * .205;
+      hil.push([W*.085 + (hx/(n-1))*s, H*.16 + (hy/(n-1))*s]);
+    }
+    paths.push({ pts:hil, alpha:.12, width:.52, dash:[], color:[164,255,177], speed:.08 });
+
+    // Lathe-like family of offset contours around the void.
+    for (let k=0;k<4;k++) {
+      const pts=[];
+      const cx=W*.665, cy=H*.49;
+      const rr=Math.min(W,H)*(.155+k*.026);
+      const wob=.04 + k*.008;
+      for(let i=0;i<=180;i++) {
+        const a=(i/180)*Math.PI*2;
+        const mod=1+wob*Math.sin(a*5 + local()*0.25) + .025*Math.sin(a*11);
+        pts.push([cx+Math.cos(a)*rr*1.18*mod, cy+Math.sin(a)*rr*.82*mod]);
+      }
+      paths.push({pts, alpha:.09 + k*.016, width:.44, dash:[1.4, 9+k*2], color:[231,237,255], speed:.04+k*.01});
+    }
+    return paths;
+  }
+
+  function hilbert(d, order) {
+    let x=0,y=0,t=d;
+    for (let s=1; s<(1<<order); s<<=1) {
+      const rx = 1 & (t >> 1);
+      const ry = 1 & (t ^ rx);
+      if (ry === 0) {
+        if (rx === 1) { x = s-1-x; y = s-1-y; }
+        const tmp=x; x=y; y=tmp;
+      }
+      x += s*rx; y += s*ry; t >>= 2;
+    }
+    return [x,y];
+  }
+
+  function makeGlyphCells() {
+    const local = makeRng(hash32(seed ^ 0xA5C11E));
+    const cols = W < 700 ? 18 : 31;
+    const rows = W < 700 ? 12 : 19;
+    const cells=[];
+    const chars=['▀','▄','░','▒','▓','╱','╲','·','•','┼'];
+    for(let y=0;y<rows;y++) for(let x=0;x<cols;x++) {
+      const h = local();
+      if (h < .39) continue;
+      cells.push({x,y,ch:chars[Math.floor(local()*chars.length)],v:local(),phase:local()*Math.PI*2});
+    }
+    return {cols,rows,cells};
+  }
+
+  function drawBackground(t) {
+    ctx.fillStyle = '#020307';
+    ctx.fillRect(0,0,W,H);
+
+    const cx=W*.665, cy=H*.49, r=Math.min(W,H)*.31;
+    let g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+    g.addColorStop(0,'rgba(10,4,18,.10)');
+    g.addColorStop(.38,'rgba(62,15,72,.055)');
+    g.addColorStop(.62,'rgba(0,110,130,.032)');
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    // Very restrained interference bands.
+    ctx.save();
+    ctx.globalAlpha=.035;
+    for(let y=0;y<H;y+=Math.max(4,H/180)) {
+      const v=.5+.5*Math.sin(y*.031 + t*.19);
+      ctx.fillStyle = v>.58 ? '#4de8ff' : '#ff4fcf';
+      ctx.fillRect(0,y,W,1);
+    }
+    ctx.restore();
+  }
+
+  function drawToolpaths(t) {
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    for (let p of toolpaths) {
+      ctx.beginPath();
+      for(let i=0;i<p.pts.length;i++) {
+        const q=p.pts[i];
+        if(i===0) ctx.moveTo(q[0],q[1]); else ctx.lineTo(q[0],q[1]);
+      }
+      ctx.strokeStyle=`rgba(${p.color[0]},${p.color[1]},${p.color[2]},${p.alpha})`;
+      ctx.lineWidth=p.width;
+      ctx.setLineDash(p.dash);
+      ctx.lineDashOffset = -t * 12 * p.speed;
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawSparseScheduler(t) {
+    const spacing = clamp(Math.min(W,H)/42, 11, 22);
+    const phase = Math.floor(t / 1.85) & 3;
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    for(let gy=0, y=spacing*.5; y<H; gy++,y+=spacing) {
+      for(let gx=0, x=spacing*.5; x<W; gx++,x+=spacing) {
+        if (((gx + gy*3) & 3) !== phase) continue;
+        const mask = hash32((gx*73856093) ^ (gy*19349663) ^ seed) & 255;
+        if(mask < 188) continue;
+        const a = .018 + (mask/255)*.034;
+        ctx.fillStyle=`rgba(118,211,255,${a})`;
+        ctx.fillRect(x,y,1,1);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawFaultBands(t) {
+    ctx.save();
+    const bands = 5;
+    const bandH = Math.max(5, H * .018);
+    for(let b=0;b<bands;b++) {
+      const h = hash32(seed ^ (b*0x9E3779B9));
+      const baseY = ((h & 0xffff)/0xffff) * (H-bandH);
+      const y = clamp(baseY + Math.sin(t*.21 + b*1.7) * H*.025, 0, H-bandH);
+      const drift = Math.sin(t*.37 + b*2.3) * (5 + (h>>>20 & 15));
+      const alpha = .04 + ((h>>>8 & 255)/255)*.045;
+      ctx.globalAlpha=alpha;
+      ctx.globalCompositeOperation='screen';
+      ctx.drawImage(trails, 0, y*DPR, trails.width, bandH*DPR, drift, y, W, bandH);
+      ctx.fillStyle = b&1 ? 'rgba(255,60,195,.045)' : 'rgba(68,224,255,.045)';
+      ctx.fillRect(0,y,W,1);
+    }
+    ctx.restore();
+  }
+
+  function drawBranches(t) {
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    const pulse = .72 + .28*Math.sin(t*.31);
+    for (const b of branches) {
+      const depthN = b.depth/7;
+      const a = (.028 + .11*depthN) * pulse * (.65 + b.salt*.7);
+      const c = b.salt < .52 ? PALETTE[0] : PALETTE[4];
+      ctx.strokeStyle=`rgba(${c[0]},${c[1]},${c[2]},${a})`;
+      ctx.lineWidth=.35 + depthN*.55;
+      ctx.beginPath();
+      ctx.moveTo(b.x1,b.y1); ctx.lineTo(b.x2,b.y2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawGlyphBiopsy(t) {
+    const data = glyphCells;
+    const cell = clamp(Math.min(W,H)/48, 8, 15);
+    const ox = W - data.cols*cell - Math.max(14,W*.025);
+    const oy = H*.13;
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    ctx.font = `${cell*1.05}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    ctx.textBaseline='top';
+    for(const c of data.cells) {
+      const pulse=.5+.5*Math.sin(t*.24 + c.phase);
+      const a=.025 + c.v*.09*pulse;
+      const col = c.v>.68 ? PALETTE[0] : c.v>.44 ? PALETTE[5] : PALETTE[4];
+      ctx.fillStyle=`rgba(${col[0]},${col[1]},${col[2]},${a})`;
+      ctx.fillText(c.ch, ox+c.x*cell, oy+c.y*cell*.78);
+    }
+    ctx.restore();
+  }
+
+  function drawVoid(t) {
+    const cx=W*.665, cy=H*.49;
+    const minD=Math.min(W,H);
+    const rx=minD*.145, ry=minD*.108;
+
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    let halo=ctx.createRadialGradient(cx,cy,rx*.55,cx,cy,rx*2.65);
+    halo.addColorStop(0,'rgba(0,0,0,0)');
+    halo.addColorStop(.28,'rgba(108,233,255,.035)');
+    halo.addColorStop(.48,'rgba(255,71,206,.075)');
+    halo.addColorStop(.72,'rgba(102,232,255,.032)');
+    halo.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=halo; ctx.fillRect(cx-rx*3,cy-rx*3,rx*6,rx*6);
+    ctx.restore();
+
+    // Occluding body / machined absence.
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.scale(1,.76);
+    const wobble = 1 + Math.sin(t*.13)*.008;
+    let g=ctx.createRadialGradient(-rx*.12,-rx*.10,rx*.08,0,0,rx*1.18*wobble);
+    g.addColorStop(0,'#06070c');
+    g.addColorStop(.58,'#010207');
+    g.addColorStop(.86,'#000106');
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.ellipse(0,0,rx*1.08,rx*1.03,0,0,Math.PI*2); ctx.fill();
+
+    ctx.strokeStyle='rgba(228,235,255,.15)';
+    ctx.lineWidth=.6;
+    ctx.setLineDash([1.5,7]);
+    ctx.beginPath(); ctx.ellipse(0,0,rx*1.02,rx*.98,0,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawScanCut(t) {
+    // One slow moving inspection/cut line rather than rapid glitching.
+    const y = ((t*.018)%1) * (H*1.18) - H*.09;
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    const g=ctx.createLinearGradient(0,y-16,0,y+16);
+    g.addColorStop(0,'rgba(0,0,0,0)');
+    g.addColorStop(.5,'rgba(211,242,255,.045)');
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,y-18,W,36);
+    ctx.restore();
+  }
+
+  function render() {
+    const t = tick * STEP;
+    drawBackground(t);
+    drawSparseScheduler(t);
+
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    ctx.globalAlpha=.95;
+    ctx.drawImage(trails, 0, 0, trails.width, trails.height, 0,0,W,H);
+    ctx.restore();
+
+    drawFaultBands(t);
+    drawToolpaths(t);
+    drawBranches(t);
+    drawGlyphBiopsy(t);
+    drawVoid(t);
+    drawScanCut(t);
+
+    // Deliberate edge falloff — the work should feel larger than the viewport.
+    const vg=ctx.createRadialGradient(W*.52,H*.50,Math.min(W,H)*.12,W*.52,H*.50,Math.max(W,H)*.72);
+    vg.addColorStop(.45,'rgba(0,0,0,0)');
+    vg.addColorStop(1,'rgba(0,0,0,.31)');
+    ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  }
+
+  function frame(now) {
+    const dt = Math.min(.08, (now-last)/1000);
+    last = now;
+    if (!paused) {
+      accumulator += dt;
+      let guard = 0;
+      while (accumulator >= STEP && guard++ < 5) {
+        simulate();
+        accumulator -= STEP;
+      }
+    }
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  function reseed() {
+    seed = hash32(seed + 0x9E3779B9);
+    rebuild();
+  }
+
+  function savePng() {
+    render();
+    const a=document.createElement('a');
+    a.download=`autoart-001-excavation-field-${seed.toString(16).padStart(8,'0')}.png`;
+    a.href=canvas.toDataURL('image/png');
+    a.click();
+    flash.style.opacity='1';
+    setTimeout(()=>flash.style.opacity='0',30);
+  }
+
+  addEventListener('resize', resize, {passive:true});
+  addEventListener('pointermove', e => {
+    pointer.x=e.clientX; pointer.y=e.clientY; pointer.active=true;
+    pointer.strength=Math.min(1.35,pointer.strength+.10);
+  }, {passive:true});
+  addEventListener('pointerdown', e => {
+    pointer.x=e.clientX; pointer.y=e.clientY; pointer.strength=1.7;
+  }, {passive:true});
+  addEventListener('pointerleave', () => pointer.active=false, {passive:true});
+  addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); paused=!paused; }
+    else if (e.key === 'r' || e.key === 'R') reseed();
+    else if (e.key === 's' || e.key === 'S') savePng();
+    else if (e.key === 'h' || e.key === 'H') {
+      showUI=!showUI; hud.classList.toggle('off',!showUI); keys.classList.toggle('off',!showUI);
+    }
+  });
+
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
