@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0010 — Almost Says</title>
+<style>
+  :root{color-scheme:light;background:#f4f0e6}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f4f0e6}
+  body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:default}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+  #wash{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 47% 44%,rgba(255,255,255,.35),transparent 46%),linear-gradient(180deg,rgba(255,255,255,.10),rgba(31,47,108,.025));mix-blend-mode:soft-light}
+</style>
+</head>
+<body aria-label="Almost Says. A field of invented glyphs becomes locally almost readable near the pointer; clicks send a brief word-like recognition wave across the nearest row.">
+<canvas id="art"></canvas><div id="wash"></div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+const SEG=[
+  [.20,.12,.80,.12], [.18,.15,.18,.48], [.82,.15,.82,.48], [.20,.50,.80,.50],
+  [.18,.52,.18,.85], [.82,.52,.82,.85], [.20,.88,.80,.88], [.21,.16,.49,.47],
+  [.79,.16,.51,.47], [.49,.53,.21,.84], [.51,.53,.79,.84], [.50,.14,.50,.47], [.50,.53,.50,.86]
+];
+const LETTERS={
+  A:[0,1,2,3,4,5], E:[0,1,3,4,6], H:[1,2,3,4,5], L:[1,4,6],
+  M:[1,2,4,5,7,8], O:[0,1,2,4,5,6], S:[0,1,3,5,6], T:[0,11,12],
+  Y:[7,8,12], B:[0,1,2,3,4,5,6]
+};
+const ALPHABET=['A','E','H','L','M','O','S','T','Y','B'];
+const WORD=['M','A','Y','B','E'];
+const pulses=[];
+const MAX_PULSES=3;
+const PULSE_MS=2600;
+const pointer={x:.5,y:.5,tx:.5,ty:.5,inside:false,energy:0};
+let W=1,H=1,D=1,last=performance.now(),raf=0,cols=10,rows=7,cells=[];
+
+function hash(n){n=Math.imul(n^n>>>16,0x45d9f3b);n=Math.imul(n^n>>>16,0x45d9f3b);return((n^n>>>16)>>>0)/4294967295}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function damp(v,t,dt,k){return v+(t-v)*(1-Math.exp(-k*dt))}
+function smooth(t){t=clamp(t,0,1);return t*t*(3-2*t)}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function maskHas(mask,s){return mask.indexOf(s)!==-1}
+function makeBase(seed){
+  const out=[];
+  for(let s=0;s<SEG.length;s++) if(hash(seed*131+s*977)>.58) out.push(s);
+  if(out.length<4){out.push((seed+1)%13,(seed+4)%13,(seed+8)%13,(seed+11)%13)}
+  return [...new Set(out)];
+}
+function rebuild(){
+  cols=clamp(Math.floor(W/92),7,16);rows=clamp(Math.floor(H/102),5,10);cells=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const id=r*cols+c+1;
+    cells.push({r,c,id,base:makeBase(id*17+23),target:ALPHABET[Math.floor(hash(id*313+9)*ALPHABET.length)],tilt:(hash(id*521+7)-.5)*.16,jitter:(hash(id*733+3)-.5)});
+  }
+}
+function resize(){
+  W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);D=Math.min(devicePixelRatio||1,1.8);
+  canvas.width=Math.floor(W*D);canvas.height=Math.floor(H*D);ctx.setTransform(D,0,0,D,0,0);rebuild();draw(performance.now());wake();
+}
+function pulseInfluence(cell,now){
+  let best={a:0,letter:null,missing:-1};
+  for(const p of pulses){
+    const age=now-p.born;if(age<0||age>PULSE_MS)continue;
+    const t=age/PULSE_MS;
+    const rowDist=Math.abs(cell.r-p.row);
+    if(rowDist>1)continue;
+    const wave=Math.exp(-Math.pow((cell.c/(Math.max(1,cols-1))-t),2)/.035);
+    const a=Math.pow(Math.sin(Math.PI*t),.65)*wave*(rowDist===0?1:.28);
+    if(a>best.a){
+      const letter=WORD[(cell.c+p.offset)%WORD.length];
+      const lm=LETTERS[letter];
+      const missing=lm[Math.floor(hash((cell.id+1)*991+p.seed)*lm.length)];
+      best={a,letter,missing};
+    }
+  }
+  return best;
+}
+function drawGlyph(cell,now,cw,ch){
+  const cx=(cell.c+.5)*cw,cy=(cell.r+.5)*ch;
+  const gx=Math.min(cw*.58,ch*.52),gy=Math.min(ch*.66,cw*.72);
+  const dx=cx-pointer.x*W,dy=cy-pointer.y*H;
+  const radius=Math.min(W,H)*.24;
+  const near=pointer.inside?Math.exp(-(dx*dx+dy*dy)/(radius*radius))*pointer.energy:0;
+  const p=pulseInfluence(cell,now);
+  const targetLetter=p.letter||cell.target;
+  const targetMask=LETTERS[targetLetter];
+  const resolve=clamp(near*.82+p.a*.96,0,.96);
+  const rot=cell.tilt*(1-resolve)+Math.sin(cell.id*1.7)*.02*p.a;
+  const j=(1-resolve)*cell.jitter*gx*.055;
+  const ox=Math.sin(cell.id*2.17)*j,oy=Math.cos(cell.id*1.43)*j;
+
+  ctx.save();ctx.translate(cx+ox,cy+oy);ctx.rotate(rot);ctx.lineCap='round';
+  for(let s=0;s<SEG.length;s++){
+    const b=maskHas(cell.base,s)?1:0;
+    let t=maskHas(targetMask,s)?1:0;
+    if(p.a>.08&&s===p.missing)t=0;
+    const alpha=.08+b*.23+(t-b)*resolve*.62;
+    if(alpha<.055)continue;
+    const q=SEG[s];
+    ctx.strokeStyle='rgba(30,48,122,'+clamp(alpha,.04,.78)+')';
+    ctx.lineWidth=1.05+resolve*.95;
+    ctx.beginPath();ctx.moveTo((q[0]-.5)*gx,(q[1]-.5)*gy);ctx.lineTo((q[2]-.5)*gx,(q[3]-.5)*gy);ctx.stroke();
+  }
+  if(p.a>.10&&p.missing>=0){
+    const q=SEG[p.missing],mx=((q[0]+q[2])*.5-.5)*gx,my=((q[1]+q[3])*.5-.5)*gy;
+    ctx.fillStyle='rgba(232,72,52,'+(.16+.58*p.a)+')';ctx.beginPath();ctx.arc(mx,my,1.1+1.4*p.a,0,Math.PI*2);ctx.fill();
+  } else if(near>.12){
+    ctx.fillStyle='rgba(232,72,52,'+(.08+near*.22)+')';ctx.beginPath();ctx.arc(gx*.39,-gy*.42,1.0+near*.55,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+}
+function draw(now){
+  ctx.globalAlpha=1;ctx.fillStyle='#f4f0e6';ctx.fillRect(0,0,W,H);
+  const cw=W/cols,ch=H/rows;
+  ctx.strokeStyle='rgba(30,48,122,.055)';ctx.lineWidth=.6;
+  for(let r=1;r<rows;r++){ctx.beginPath();ctx.moveTo(W*.035,r*ch);ctx.lineTo(W*.965,r*ch);ctx.stroke()}
+  for(const cell of cells)drawGlyph(cell,now,cw,ch);
+  ctx.fillStyle='rgba(30,48,122,.34)';
+  ctx.beginPath();ctx.arc(W*.5,H*.5,1.25,0,Math.PI*2);ctx.fill();
+}
+function settled(){return Math.abs(pointer.energy-(pointer.inside?1:0))<.002&&Math.abs(pointer.x-pointer.tx)<.0003&&Math.abs(pointer.y-pointer.ty)<.0003&&pulses.length===0}
+function frame(now){
+  raf=0;const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  pointer.x=damp(pointer.x,pointer.tx,dt,8.2);pointer.y=damp(pointer.y,pointer.ty,dt,8.2);pointer.energy=damp(pointer.energy,pointer.inside?1:0,dt,pointer.inside?7:3.6);
+  for(let i=pulses.length-1;i>=0;i--)if(now-pulses[i].born>PULSE_MS)pulses.splice(i,1);
+  draw(now);if(!settled())raf=requestAnimationFrame(frame);
+}
+function addPulse(x,y){
+  const row=clamp(Math.floor(y/H*rows),0,rows-1);
+  if(pulses.length>=MAX_PULSES)pulses.shift();
+  pulses.push({row,born:performance.now(),offset:Math.floor(x/W*WORD.length),seed:Math.floor(x*17+y*31+performance.now())});wake();
+}
+addEventListener('pointermove',e=>{pointer.tx=clamp(e.clientX/W,0,1);pointer.ty=clamp(e.clientY/H,0,1);pointer.inside=true;wake()},{passive:true});
+addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;pointer.tx=clamp(e.clientX/W,0,1);pointer.ty=clamp(e.clientY/H,0,1);pointer.inside=true;addPulse(e.clientX,e.clientY);wake()},{passive:true});
+addEventListener('pointerleave',()=>{pointer.inside=false;wake()},{passive:true});
+addEventListener('resize',resize,{passive:true});
+resize();
+})();
+</script>
+</body>
+</html>
