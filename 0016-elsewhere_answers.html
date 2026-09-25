@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0016 — Elsewhere Answers</title>
+<style>
+:root{color-scheme:dark;background:#10151d}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#10151d}
+body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:default}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+</style>
+</head>
+<body aria-label="Elsewhere Answers. Translucent coloured panes rest in a dark field. Pointer location quietly disturbs a different region of the composition, and clicking produces a delayed response elsewhere rather than at the point of contact.">
+<canvas id="c"></canvas>
+<script>
+(()=>{
+'use strict';
+const c=document.getElementById('c');
+const ctx=c.getContext('2d',{alpha:false});
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MAX_REPLIES=3, REPLY_MS=3300, DELAY_MS=260;
+let W=innerWidth,H=innerHeight,D=1,raf=0,last=performance.now();
+const p={x:W*.5,y:H*.5,tx:W*.5,ty:H*.5,presence:0,tp:0};
+let replies=[];
+const panes=[
+  [.12,.16,.22,.11,-.10,'#d16f4f',.82,1.08],
+  [.33,.12,.10,.18,.07,'#6eb6bb',.72,.82],
+  [.70,.16,.20,.11,.12,'#e0b34f',.80,1.14],
+  [.88,.31,.12,.19,-.08,'#8e76b9',.68,.88],
+  [.59,.38,.15,.10,-.04,'#8bb487',.76,1.18],
+  [.18,.43,.16,.16,.09,'#c96d86',.73,.94],
+  [.40,.57,.22,.11,-.06,'#517fa9',.78,1.20],
+  [.77,.59,.17,.13,.08,'#df8750',.80,1.02],
+  [.09,.73,.13,.18,-.12,'#4f9a96',.70,.84],
+  [.31,.84,.18,.10,.05,'#b96d9d',.74,1.10],
+  [.62,.80,.11,.18,-.04,'#8ec3ad',.70,.92],
+  [.88,.83,.15,.09,.11,'#d7b85b',.77,1.16]
+];
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function smooth(a,b,dt,k){return a+(b-a)*(1-Math.exp(-k*dt))}
+function rgba(hex,a){
+  const n=parseInt(hex.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;
+}
+function mapped(x,y){
+  const u=clamp(x/Math.max(1,W),0,1),v=clamp(y/Math.max(1,H),0,1);
+  const mu=clamp(.08+.84*(1-v)+.035*Math.sin(u*Math.PI*2),.045,.955);
+  const mv=clamp(.10+.80*u+.03*Math.cos(v*Math.PI*2),.045,.955);
+  return[mu*W,mv*H];
+}
+function polygon(w,h,j){
+  const a=3+j*4,b=5+(1-j)*5;
+  ctx.beginPath();
+  ctx.moveTo(-w*.5+a,-h*.5);
+  ctx.lineTo(w*.5,-h*.5+b);
+  ctx.lineTo(w*.5-a*.55,h*.5);
+  ctx.lineTo(-w*.5,-h*.5+h-b*.35);
+  ctx.closePath();
+}
+function replyStrength(r,now){
+  const age=now-r.born;
+  if(age<DELAY_MS||age>=REPLY_MS)return 0;
+  const t=(age-DELAY_MS)/(REPLY_MS-DELAY_MS);
+  return Math.pow(Math.sin(Math.PI*t),.82);
+}
+function drawPane(q,i,now,focusX,focusY){
+  const [ux,uy,uw,uh,baseRot,col,alpha,depth]=q;
+  const s=Math.min(W,H);
+  const x=ux*W,y=uy*H,w=uw*s,h=uh*s;
+  const dx=x-focusX,dy=y-focusY;
+  const rad=Math.max(130,s*.25);
+  const direct=Math.exp(-(dx*dx+dy*dy)/(rad*rad))*p.presence;
+  let pulse=0,px=0,py=0;
+  for(const r of replies){
+    const rs=replyStrength(r,now);if(rs<=0)continue;
+    const rx=x-r.x,ry=y-r.y,rr=Math.max(120,s*.22);
+    const g=Math.exp(-(rx*rx+ry*ry)/(rr*rr))*rs;
+    if(g>pulse){pulse=g;px=rx;py=ry}
+  }
+  const mag=(direct*.58+pulse*1.12)*(reduced?.62:1);
+  const len=Math.hypot(dx,dy)||1;
+  const ox=(dx/len)*mag*(11+8*depth);
+  const oy=(dy/len)*mag*(8+5*depth)-mag*2;
+  const rot=baseRot+mag*(i%2?-1:1)*.045;
+  const j=(i*.173)%1;
+  ctx.save();
+  ctx.translate(x+ox,y+oy);ctx.rotate(rot);
+  // displaced shadow: greater when the response occurs elsewhere
+  ctx.save();ctx.translate(5+mag*8,7+mag*10);
+  polygon(w,h,j);ctx.fillStyle=`rgba(0,0,0,${.22+mag*.11})`;ctx.fill();ctx.restore();
+  if(pulse>.05){
+    ctx.save();ctx.translate(-6*pulse,4*pulse);
+    polygon(w,h,j);ctx.strokeStyle=`rgba(217,235,242,${.08+.18*pulse})`;ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
+  }
+  polygon(w,h,j);ctx.fillStyle=rgba(col,alpha+Math.min(.17,mag*.13));ctx.fill();
+  // translucent internal wash
+  ctx.save();polygon(w,h,j);ctx.clip();
+  const grad=ctx.createLinearGradient(-w*.5,-h*.5,w*.5,h*.5);
+  grad.addColorStop(0,`rgba(255,255,255,${.11+mag*.05})`);
+  grad.addColorStop(.45,'rgba(255,255,255,.015)');
+  grad.addColorStop(1,'rgba(0,0,0,.10)');
+  ctx.fillStyle=grad;ctx.fillRect(-w*.6,-h*.6,w*1.2,h*1.2);
+  ctx.restore();
+  polygon(w,h,j);ctx.strokeStyle=`rgba(236,240,232,${.12+mag*.08})`;ctx.lineWidth=.9;ctx.stroke();
+  // one edge that makes each pane feel cut rather than button-like
+  ctx.beginPath();ctx.moveTo(-w*.34,-h*.28);ctx.lineTo(w*.28,-h*.35);
+  ctx.strokeStyle=`rgba(255,255,246,${.18+mag*.05})`;ctx.lineWidth=.7;ctx.stroke();
+  ctx.restore();
+}
+function draw(now){
+  const bg=ctx.createRadialGradient(W*.58,H*.40,0,W*.58,H*.40,Math.max(W,H)*.82);
+  bg.addColorStop(0,'#182331');bg.addColorStop(.54,'#111a24');bg.addColorStop(1,'#0d1118');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  // faint, non-causal registration marks
+  ctx.strokeStyle='rgba(193,211,218,.055)';ctx.lineWidth=.7;
+  const s=Math.min(W,H);
+  for(let i=0;i<7;i++){
+    const x=(.08+i*.145)*W,y=(.21+((i*37)%53)/100)*H;
+    ctx.beginPath();ctx.moveTo(x-s*.035,y);ctx.lineTo(x+s*.035,y+s*.012);ctx.stroke();
+  }
+  const [fx,fy]=mapped(p.x,p.y);
+  for(let i=0;i<panes.length;i++)drawPane(panes[i],i,now,fx,fy);
+}
+function settled(){
+  return Math.abs(p.x-p.tx)<.08&&Math.abs(p.y-p.ty)<.08&&Math.abs(p.presence-p.tp)<.002;
+}
+function frame(now){
+  raf=0;const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  const k=reduced?18:8.2;
+  p.x=smooth(p.x,p.tx,dt,k);p.y=smooth(p.y,p.ty,dt,k);p.presence=smooth(p.presence,p.tp,dt,k);
+  replies=replies.filter(r=>now-r.born<REPLY_MS);
+  draw(now);
+  if(!settled()||replies.length)raf=requestAnimationFrame(frame);
+}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function point(e){return{x:clamp(e.clientX,0,W),y:clamp(e.clientY,0,H)}}
+addEventListener('pointermove',e=>{const q=point(e);p.tx=q.x;p.ty=q.y;p.tp=1;wake()},{passive:true});
+addEventListener('pointerdown',e=>{
+  if(e.button!==undefined&&e.button!==0)return;
+  const q=point(e),m=mapped(q.x,q.y);
+  p.tx=q.x;p.ty=q.y;p.tp=1;
+  replies.push({x:m[0],y:m[1],born:performance.now()});
+  if(replies.length>MAX_REPLIES)replies.splice(0,replies.length-MAX_REPLIES);
+  wake();
+},{passive:true});
+document.documentElement.addEventListener('pointerleave',()=>{p.tp=0;wake()},{passive:true});
+addEventListener('resize',()=>{
+  W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,1.75);
+  c.width=Math.max(1,Math.round(W*D));c.height=Math.max(1,Math.round(H*D));
+  ctx.setTransform(D,0,0,D,0,0);draw(performance.now());wake();
+},{passive:true});
+W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,1.75);
+c.width=Math.max(1,Math.round(W*D));c.height=Math.max(1,Math.round(H*D));ctx.setTransform(D,0,0,D,0,0);draw(performance.now());
+})();
+</script>
+</body>
+</html>
