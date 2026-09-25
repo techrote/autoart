@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART e0004 — Unreturned Signal</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html,body { margin:0; width:100%; height:100%; overflow:hidden; background:#020405; }
+  body { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; background:#020405; touch-action:none; }
+  #hud { position:fixed; left:14px; top:12px; z-index:2; pointer-events:none; color:rgba(205,225,223,.52); font-size:9px; letter-spacing:.09em; line-height:1.45; text-transform:uppercase; transition:opacity .2s ease; }
+  #hud b { color:rgba(235,244,241,.82); font-weight:600; }
+  #hud .dim { opacity:.38; }
+  #keys { position:fixed; right:13px; bottom:10px; z-index:2; pointer-events:none; color:rgba(198,216,214,.20); font-size:8px; letter-spacing:.055em; text-align:right; transition:opacity .2s ease; }
+  .off { opacity:0 !important; }
+  @media (max-width:640px){ #hud{left:8px;top:7px;font-size:7px} #keys{right:8px;bottom:6px;font-size:6px;max-width:74vw} }
+</style>
+</head>
+<body>
+<canvas id="art" aria-label="Animated generative artwork titled Unreturned Signal"></canvas>
+<div id="hud"><b>AUTOART e0004</b> // UNRETURNED SIGNAL<br><span class="dim" id="status">passive section · no declared target</span></div>
+<div id="keys">POINTER bias · CLICK impulse · SPACE hold · R reseed · H interface</div>
+<script>
+(() => {
+'use strict';
+
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+const residue=document.createElement('canvas');
+const rctx=residue.getContext('2d',{alpha:true});
+const hud=document.getElementById('hud'), keys=document.getElementById('keys'), status=document.getElementById('status');
+
+const BASE_SEED=0xE0004A71>>>0;
+const STEP=1/60, TRACE_CAP=820, IMPULSE_CAP=3, ECHO_CAP=12;
+let W=1,H=1,DPR=1,seed=BASE_SEED,rng=makeRng(seed),tick=0,last=performance.now(),acc=0,paused=false,showUI=true;
+let traces=[],strata=[],fractures=[],receivers=[],impulses=[],echoes=[];
+let site={cx:0,cy:0,rx:1,ry:1,rot:0};
+let probe={x:0,y:0,strength:0,active:false};
+
+function makeRng(s){let a=s>>>0;return()=>{a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+function hash32(x){x=(x^(x>>>16))>>>0;x=Math.imul(x,0x7feb352d)>>>0;x=(x^(x>>>15))>>>0;x=Math.imul(x,0x846ca68b)>>>0;return(x^(x>>>16))>>>0;}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const mix=(a,b,t)=>a+(b-a)*t;
+function rand(a,b){return a+(b-a)*rng();}
+
+function resize(){
+  W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);DPR=Math.min(devicePixelRatio||1,1.55);
+  const bw=Math.max(1,Math.floor(W*DPR)),bh=Math.max(1,Math.floor(H*DPR));
+  if(canvas.width===bw&&canvas.height===bh)return;
+  canvas.width=residue.width=bw;canvas.height=residue.height=bh;
+  ctx.setTransform(DPR,0,0,DPR,0,0);rctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.imageSmoothingEnabled=rctx.imageSmoothingEnabled=true;
+  rebuild();
+}
+
+function rebuild(){
+  rng=makeRng(seed);tick=0;impulses=[];echoes=[];probe.strength=0;
+  rctx.setTransform(1,0,0,1,0,0);rctx.clearRect(0,0,residue.width,residue.height);rctx.setTransform(DPR,0,0,DPR,0,0);
+  site=makeSite();strata=makeStrata();fractures=makeFractures();receivers=makeReceivers();
+  const n=clamp(Math.floor(W*H/1350),430,TRACE_CAP);
+  traces=new Array(n);for(let i=0;i<n;i++)traces[i]=spawnTrace(i,true);
+  for(let i=0;i<145;i++)simulate();
+  updateStatus();
+}
+
+function makeSite(){
+  const r=makeRng(hash32(seed^0x51A7E771));
+  const m=Math.min(W,H);
+  return {cx:W*(.57+(r()-.5)*.045),cy:H*(.56+(r()-.5)*.035),rx:m*(.14+r()*.025),ry:m*(.085+r()*.02),rot:(r()-.5)*.26};
+}
+
+function siteMetric(x,y){
+  const c=Math.cos(site.rot),s=Math.sin(site.rot),dx=x-site.cx,dy=y-site.cy;
+  const qx=(dx*c+dy*s)/site.rx,qy=(-dx*s+dy*c)/site.ry;
+  const a=Math.atan2(qy,qx),w=1+.075*Math.sin(a*4+.9)+.035*Math.sin(a*9+1.8);
+  return Math.hypot(qx,qy)/w;
+}
+
+function makeStrata(){
+  const r=makeRng(hash32(seed^0x57A771));const out=[];const n=W<650?24:34;
+  for(let i=0;i<n;i++)out.push({y:(i+.4)/n*H,phase:r()*6.283,freq:.8+r()*2.1,amp:H*(.003+r()*.009),tilt:(r()-.5)*H*.028,salt:r()});
+  return out;
+}
+
+function makeFractures(){
+  const r=makeRng(hash32(seed^0xF2AC71));const out=[];const m=Math.min(W,H);
+  for(let i=0;i<11;i++){
+    const a=r()*Math.PI*2,rad=m*(.13+r()*.13),len=m*(.025+r()*.08);
+    const x=site.cx+Math.cos(a)*rad,y=site.cy+Math.sin(a)*rad*.72;
+    out.push({x,y,a:a+(r()-.5)*1.2,len,phase:r()*6.283,salt:r()});
+  }
+  return out;
+}
+
+function makeReceivers(){
+  const r=makeRng(hash32(seed^0xA11E5));const n=W<650?6:9,out=[];
+  for(let i=0;i<n;i++)out.push({x:W*(.08+i/(n-1)*.84)+(r()-.5)*W*.014,y:H*(.14+r()*.04),salt:r(),phase:r()*6.283});
+  return out;
+}
+
+function spawnTrace(id,initial=false){
+  let x,y;const q=rng();
+  if(q<.72){x=rand(-30,W+30);y=rng()<.5?rand(-18,H*.3):rand(H*.7,H+18);}else{x=rng()<.5?rand(-18,W*.16):rand(W*.84,W+18);y=rand(-10,H+10);}
+  return{id,x,y,px:x,py:y,vx:rand(-.09,.09),vy:rand(-.08,.08),age:initial?Math.floor(rng()*650):0,life:Math.floor(rand(700,1700)),phase:rng()*6.283,salt:rng(),width:rand(.32,.85)};
+}
+
+function fieldAt(x,y,t,p){
+  const n=Math.sin(x*.0053+y*.0037+t*.025+p.phase)+.55*Math.cos(y*.0081-x*.0028-t*.017);
+  let fx=.31*Math.cos(n*2.15)+.13*Math.sin(y*.0044+t*.023),fy=.39+.18*Math.sin(n*1.9);
+  const m=siteMetric(x,y),dx=x-site.cx,dy=y-site.cy,d=Math.hypot(dx,dy)+.001;
+  const shell=Math.exp(-Math.pow((m-1)/.34,2));
+  fx+=(dx/d)*shell*1.05+(-dy/d)*shell*.52;fy+=(dy/d)*shell*.86+(dx/d)*shell*.52;
+  if(m<.92){const push=(.92-m)*3.2;fx+=(dx/d)*push;fy+=(dy/d)*push;}
+  if(probe.strength>.002){
+    const px=x-probe.x,py=y-probe.y,d2=px*px+py*py+100,reach=Math.min(W,H)*.22,a=Math.exp(-d2/(reach*reach))*probe.strength,inv=1/Math.sqrt(d2);
+    fx+=(-py*inv)*a*1.55+(px*inv)*a*.18;fy+=(px*inv)*a*1.55+(py*inv)*a*.18;
+  }
+  for(const q of impulses){
+    const ex=x-q.x,ey=y-q.y,dist=Math.hypot(ex,ey)+.01,front=Math.exp(-Math.pow((dist-q.r)/Math.max(18,q.r*.15),2))*q.life;
+    const block=siteMetric(x,y)<1.03?.34:1;
+    fx+=(ex/dist)*front*1.35*block;fy+=(ey/dist)*front*1.35*block;
+  }
+  return[fx,fy];
+}
+
+function simulate(){
+  const t=tick*STEP;probe.strength*=.971;
+  for(let i=impulses.length-1;i>=0;i--){
+    const q=impulses[i];q.r+=1.52;q.life*=.986;
+    if(!q.echoed&&circleTouchesSite(q)){q.echoed=true;spawnEchoes(q);}
+    if(q.life<.024||q.r>Math.max(W,H)*.68)impulses.splice(i,1);
+  }
+  for(let i=echoes.length-1;i>=0;i--){echoes[i].life*=.982;echoes[i].r+=.72;if(echoes[i].life<.025)echoes.splice(i,1);}
+  rctx.save();rctx.globalCompositeOperation='source-over';rctx.fillStyle='rgba(2,4,5,.015)';rctx.fillRect(0,0,W,H);rctx.globalCompositeOperation='lighter';
+  for(let i=0;i<traces.length;i++){
+    let p=traces[i];p.px=p.x;p.py=p.y;const f=fieldAt(p.x,p.y,t,p);p.vx=p.vx*.934+f[0]*.061;p.vy=p.vy*.934+f[1]*.061;
+    const mag=Math.hypot(p.vx,p.vy)||1,lim=1.95;if(mag>lim){p.vx*=lim/mag;p.vy*=lim/mag;}p.x+=p.vx;p.y+=p.vy;p.age++;
+    const m=siteMetric(p.x,p.y),near=Math.exp(-Math.pow((m-1)/.48,2));
+    const c=p.salt>.83?[220,163,87]:p.salt>.36?[91,206,202]:[184,214,208];
+    const a=.048+.13*near+.055*p.salt;
+    rctx.strokeStyle=`rgba(${c[0]},${c[1]},${c[2]},${a})`;rctx.lineWidth=p.width;rctx.beginPath();rctx.moveTo(p.px,p.py);rctx.lineTo(p.x,p.y);rctx.stroke();
+    if(((p.id+tick)&127)===0&&near>.22){rctx.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},${a*.7})`;rctx.fillRect(Math.round(p.x/5)*5,Math.round(p.y/5)*5,1.2,1.2);}
+    if(p.x<-70||p.x>W+70||p.y<-70||p.y>H+70||p.age>p.life)traces[i]=spawnTrace(p.id,false);
+  }
+  rctx.restore();tick++;
+}
+
+function circleTouchesSite(q){const d=Math.hypot(q.x-site.cx,q.y-site.cy);return Math.abs(d-q.r)<Math.max(site.rx,site.ry)*.72;}
+function spawnEchoes(q){
+  const r=makeRng(hash32(seed^((q.x|0)*911)^((q.y|0)*3571)^tick));
+  const count=5+Math.floor(r()*4);
+  for(let i=0;i<count;i++){
+    if(echoes.length>=ECHO_CAP)echoes.shift();
+    const a=Math.atan2(site.cy-q.y,site.cx-q.x)+(r()-.5)*1.15;
+    echoes.push({a,r:Math.max(site.rx,site.ry)*(1.05+r()*.55),life:.65+r()*.35,salt:r()});
+  }
+}
+
+function drawBackground(t){
+  ctx.fillStyle='#020405';ctx.fillRect(0,0,W,H);
+  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'rgba(10,27,29,.18)');g.addColorStop(.48,'rgba(5,8,8,.02)');g.addColorStop(1,'rgba(34,20,11,.13)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.globalAlpha=.048;const step=Math.max(10,H/74);for(let y=0;y<H;y+=step){ctx.fillStyle=((y/step|0)&1)?'rgba(83,196,196,.17)':'rgba(213,153,82,.14)';ctx.fillRect(0,y,W,1);}ctx.restore();
+}
+
+function strataY(s,x,t){
+  const base=s.y+s.tilt*(x/W-.5)+Math.sin(x/W*Math.PI*2*s.freq+s.phase+t*.010)*s.amp;
+  const m=siteMetric(x,base),dx=x-site.cx;
+  const bend=Math.exp(-Math.pow((m-1)/.58,2))*H*.015*Math.sin((x-site.cx)*.016+s.phase);
+  const phaseSlip=(dx>0?1:-1)*Math.exp(-Math.pow((m-1)/.43,2))*H*.006*(.35+s.salt);
+  const localProbe=probe.strength*Math.exp(-((x-probe.x)*(x-probe.x)+(base-probe.y)*(base-probe.y))/(Math.min(W,H)*Math.min(W,H)*.035))*H*.006;
+  return base+bend+phaseSlip+localProbe*Math.sin(x*.02+t*.13);
+}
+
+function drawStrata(t){
+  ctx.save();ctx.globalCompositeOperation='screen';
+  for(const s of strata){
+    ctx.beginPath();let pen=false;
+    for(let i=0;i<=64;i++){
+      const x=i/64*W,y=strataY(s,x,t),m=siteMetric(x,y);
+      const dropout=m<.82&&((i+(s.salt*17|0))%3!==0);
+      if(dropout){pen=false;continue;}
+      if(!pen){ctx.moveTo(x,y);pen=true;}else ctx.lineTo(x,y);
+    }
+    const a=.065+s.salt*.12;ctx.strokeStyle=s.salt>.82?`rgba(216,158,84,${a})`:`rgba(105,205,202,${a})`;ctx.lineWidth=.48+s.salt*.18;ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawFractures(t){
+  ctx.save();ctx.globalCompositeOperation='screen';
+  for(const f of fractures){
+    const pulse=.62+.38*Math.sin(t*.047+f.phase);const x2=f.x+Math.cos(f.a)*f.len,y2=f.y+Math.sin(f.a)*f.len;
+    ctx.strokeStyle=f.salt>.7?`rgba(218,164,92,${.045+.06*pulse})`:`rgba(111,213,209,${.035+.05*pulse})`;ctx.lineWidth=.42;ctx.setLineDash([1,5]);ctx.lineDashOffset=-t*.09;
+    ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(x2,y2);ctx.stroke();
+  }
+  ctx.setLineDash([]);ctx.restore();
+}
+
+function drawReceivers(t){
+  ctx.save();ctx.globalCompositeOperation='screen';const y0=H*.105;
+  for(let i=0;i<receivers.length;i++){
+    const r=receivers[i],h=7+4*Math.sin(t*.031+r.phase),a=.07+r.salt*.08;
+    ctx.strokeStyle=`rgba(190,221,217,${a})`;ctx.lineWidth=.45;ctx.beginPath();ctx.moveTo(r.x,y0-h);ctx.lineTo(r.x,y0+h);ctx.stroke();
+    ctx.fillStyle=r.salt>.62?`rgba(219,161,87,${a*.85})`:`rgba(97,210,207,${a*.85})`;ctx.fillRect(r.x-1,y0-1,2,2);
+  }
+  ctx.restore();
+}
+
+function drawImpulse(q,t){
+  ctx.save();ctx.globalCompositeOperation='screen';const n=72;
+  for(let i=0;i<n;i++){
+    if(((i+(q.r*.08|0))%3)!==0)continue;
+    const a=i/n*Math.PI*2,x=q.x+Math.cos(a)*q.r,y=q.y+Math.sin(a)*q.r,m=siteMetric(x,y);
+    if(m<.9)continue;
+    const tang=8+10*(.5+.5*Math.sin(i*2.7+t*.12));
+    const tx=-Math.sin(a),ty=Math.cos(a),fade=q.life*(m<1.28?.58:1);
+    ctx.strokeStyle=`rgba(113,218,211,${.025+.11*fade})`;ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(x-tx*tang*.5,y-ty*tang*.5);ctx.lineTo(x+tx*tang*.5,y+ty*tang*.5);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawEchoes(t){
+  ctx.save();ctx.globalCompositeOperation='screen';
+  for(const e of echoes){
+    const spread=e.r;const a=e.a;const cx=site.cx+Math.cos(a)*spread*.18,cy=site.cy+Math.sin(a)*spread*.12;
+    ctx.strokeStyle=e.salt>.68?`rgba(218,161,87,${.03+.10*e.life})`:`rgba(112,220,214,${.03+.09*e.life})`;ctx.lineWidth=.5;ctx.setLineDash([1,6]);ctx.lineDashOffset=-t*.16;
+    ctx.beginPath();ctx.arc(cx,cy,spread,a-.36,a+.36);ctx.stroke();
+  }
+  ctx.setLineDash([]);ctx.restore();
+}
+
+function drawQuietZone(t){
+  // The site is never filled or outlined. Only a faint attenuation field hints at missing return.
+  const r=Math.max(site.rx,site.ry)*2.6;const g=ctx.createRadialGradient(site.cx,site.cy,0,site.cx,site.cy,r);
+  g.addColorStop(0,'rgba(0,0,0,.23)');g.addColorStop(.33,'rgba(1,3,4,.11)');g.addColorStop(.72,'rgba(0,0,0,.025)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(site.cx-r,site.cy-r,r*2,r*2);
+}
+
+function drawScan(t){
+  const x=((t*.013)%1)*(W*1.18)-W*.09;ctx.save();ctx.globalCompositeOperation='screen';ctx.strokeStyle='rgba(207,237,232,.045)';ctx.lineWidth=.42;
+  ctx.beginPath();ctx.moveTo(x-55,0);ctx.lineTo(x+55,H);ctx.stroke();ctx.restore();
+}
+
+function drawFrame(t){
+  drawBackground(t);drawStrata(t);
+  ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=.96;ctx.drawImage(residue,0,0,residue.width,residue.height,0,0,W,H);ctx.restore();
+  drawQuietZone(t);drawFractures(t);drawReceivers(t);drawScan(t);
+  for(const q of impulses)drawImpulse(q,t);drawEchoes(t);
+  const vg=ctx.createRadialGradient(W*.54,H*.54,Math.min(W,H)*.17,W*.54,H*.54,Math.max(W,H)*.8);vg.addColorStop(.48,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.38)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+
+function updateStatus(){status.textContent=`${paused?'section held':probe.strength>.08?'local field biased':impulses.length?'impulse return incomplete':'passive section · no declared target'} · seed ${seed.toString(16).toUpperCase().padStart(8,'0')}`;}
+function frame(now){const dt=Math.min(.08,(now-last)/1000);last=now;if(!paused){acc+=dt;let guard=0;while(acc>=STEP&&guard++<5){simulate();acc-=STEP;}}drawFrame(tick*STEP);if((tick&15)===0)updateStatus();requestAnimationFrame(frame);}
+function setProbe(x,y,s){probe.x=x;probe.y=y;probe.active=true;probe.strength=clamp(Math.max(probe.strength,s),0,1.45);}
+function addImpulse(x,y){if(impulses.length>=IMPULSE_CAP)impulses.shift();impulses.push({x,y,r:8,life:1,echoed:false});setProbe(x,y,1.25);updateStatus();}
+function reseed(){seed=hash32(seed+0x9E3779B9);rebuild();}
+
+addEventListener('resize',resize,{passive:true});
+canvas.addEventListener('pointermove',e=>setProbe(e.clientX,e.clientY,.58),{passive:true});
+canvas.addEventListener('pointerdown',e=>{setProbe(e.clientX,e.clientY,1.05);addImpulse(e.clientX,e.clientY);},{passive:true});
+canvas.addEventListener('pointerleave',()=>{probe.active=false;},{passive:true});
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();paused=!paused;updateStatus();}else if(e.key==='r'||e.key==='R')reseed();else if(e.key==='h'||e.key==='H'){showUI=!showUI;hud.classList.toggle('off',!showUI);keys.classList.toggle('off',!showUI);}});
+resize();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
