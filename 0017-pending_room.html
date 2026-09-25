@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0017 — Pending Room</title>
+<style>
+:root{color-scheme:light;background:#e6e1d7}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#e6e1d7}
+body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:default}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+</style>
+</head>
+<body aria-label="Pending Room. A quiet architectural field contains five narrow seams. Pointer position subtly changes their tension. Clicking arms one seam, but the visible opening occurs only after an undisclosed delay influenced by where the click occurred.">
+<canvas id="c"></canvas>
+<script>
+(()=>{
+'use strict';
+const c=document.getElementById('c');
+const ctx=c.getContext('2d',{alpha:false});
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SLOTS=5, OPEN_IN=420, HOLD=260, CLOSE=920;
+let W=innerWidth,H=innerHeight,D=1,raf=0,last=performance.now();
+const p={x:W*.5,y:H*.5,tx:W*.5,ty:H*.5,presence:0,tp:0};
+let pending=null;
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function smooth(a,b,dt,k){return a+(b-a)*(1-Math.exp(-k*dt))}
+function ease(t){t=clamp(t,0,1);return t*t*(3-2*t)}
+function slotX(i){return W*(.18+i*(.64/(SLOTS-1)))}
+function chosenSlot(x){return clamp(Math.round((x/W-.18)/(.64/(SLOTS-1))),0,SLOTS-1)}
+function delayFor(y){const v=clamp(y/Math.max(1,H),0,1);return 1800+(1-v)*3600}
+function phase(now){
+  if(!pending)return{slot:-1,anticipation:0,falseStart:0,open:0};
+  const age=now-pending.born;
+  if(age<pending.delay){
+    const t=age/pending.delay;
+    const anticipation=ease(t)*.9;
+    const falseStart=Math.exp(-Math.pow((t-.58)/.055,2))*.16;
+    return{slot:pending.slot,anticipation,falseStart,open:falseStart};
+  }
+  const e=age-pending.delay;
+  let open=0;
+  if(e<OPEN_IN)open=ease(e/OPEN_IN);
+  else if(e<OPEN_IN+HOLD)open=1;
+  else if(e<OPEN_IN+HOLD+CLOSE)open=1-ease((e-OPEN_IN-HOLD)/CLOSE);
+  else{pending=null;return{slot:-1,anticipation:0,falseStart:0,open:0}}
+  return{slot:pending.slot,anticipation:1,falseStart:0,open};
+}
+function draw(now){
+  const ph=phase(now);
+  ctx.fillStyle='#e6e1d7';ctx.fillRect(0,0,W,H);
+  const s=Math.min(W,H);
+  const left=W*.10,right=W*.90,top=H*.095,bottom=H*.885;
+  // quiet back wall and perspective pressure
+  const vg=ctx.createLinearGradient(0,top,0,bottom);
+  vg.addColorStop(0,'#eeeae2');vg.addColorStop(.57,'#e6e1d7');vg.addColorStop(1,'#d6d0c4');
+  ctx.fillStyle=vg;ctx.fillRect(left,top,right-left,bottom-top);
+  ctx.strokeStyle='rgba(50,48,43,.14)';ctx.lineWidth=.8;
+  ctx.strokeRect(left+.5,top+.5,right-left-1,bottom-top-1);
+
+  const vx=W*.5+(p.x-W*.5)*.012*p.presence;
+  ctx.strokeStyle='rgba(61,58,52,.075)';ctx.lineWidth=.7;
+  ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(vx,H*.36);ctx.lineTo(right,top);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(left,bottom);ctx.lineTo(vx,H*.67);ctx.lineTo(right,bottom);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(left,H*.70);ctx.lineTo(right,H*.70);ctx.stroke();
+
+  // low bench: enough architecture to imply waiting, not enough to become illustration
+  ctx.fillStyle='rgba(62,58,52,.12)';
+  ctx.fillRect(W*.37,H*.705,W*.26,Math.max(3,s*.010));
+  ctx.fillRect(W*.395,H*.715,Math.max(2,s*.006),H*.055);
+  ctx.fillRect(W*.599,H*.715,Math.max(2,s*.006),H*.055);
+
+  const hoverSlot=chosenSlot(p.x);
+  for(let i=0;i<SLOTS;i++){
+    const x=slotX(i);
+    const dist=Math.abs(x-p.x)/Math.max(1,W*.19);
+    const hover=Math.exp(-dist*dist*3.2)*p.presence;
+    const armed=i===ph.slot?1:0;
+    const open=armed?ph.open:0;
+    const pre=armed?ph.anticipation:0;
+    const gap=(reduced?8:15)*open;
+    const lean=(hover*(p.y/H-.5)*1.7)+(armed?Math.sin(now*.0021+i)*pre*.18:0);
+    ctx.save();ctx.translate(x,0);
+    // recess only becomes materially visible when something finally happens
+    if(open>.005){
+      const rg=ctx.createLinearGradient(-gap,0,gap,0);
+      rg.addColorStop(0,'rgba(31,32,31,.28)');
+      rg.addColorStop(.5,`rgba(186,145,77,${.10+.30*open})`);
+      rg.addColorStop(1,'rgba(31,32,31,.30)');
+      ctx.fillStyle=rg;ctx.fillRect(-gap,H*.19,gap*2,H*.43);
+    }
+    ctx.strokeStyle=`rgba(50,48,43,${.19+hover*.11+pre*.05})`;
+    ctx.lineWidth=.75+hover*.42+pre*.28;
+    ctx.beginPath();ctx.moveTo(-gap+lean,H*.18);ctx.lineTo(-gap-lean*.25,H*.64);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(gap+lean,H*.18);ctx.lineTo(gap-lean*.25,H*.64);ctx.stroke();
+    // small lintel: its imperceptible thickening is the only pre-event acknowledgement
+    ctx.strokeStyle=`rgba(55,51,45,${.11+pre*.09})`;ctx.lineWidth=.7+pre*.25;
+    ctx.beginPath();ctx.moveTo(-s*.022,H*.18);ctx.lineTo(s*.022,H*.18);ctx.stroke();
+    // threshold shadow
+    ctx.strokeStyle=`rgba(45,43,39,${.07+open*.13})`;ctx.lineWidth=.8;
+    ctx.beginPath();ctx.moveTo(-s*.028,H*.64);ctx.lineTo(s*.028,H*.64);ctx.stroke();
+    ctx.restore();
+  }
+
+  // fixed witness speck; deliberately not a status indicator
+  ctx.fillStyle='rgba(65,60,52,.42)';ctx.beginPath();ctx.arc(W*.5,H*.676,1.2,0,Math.PI*2);ctx.fill();
+}
+function settled(){return Math.abs(p.x-p.tx)<.08&&Math.abs(p.y-p.ty)<.08&&Math.abs(p.presence-p.tp)<.002}
+function frame(now){
+  raf=0;const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  const k=reduced?18:8.4;
+  p.x=smooth(p.x,p.tx,dt,k);p.y=smooth(p.y,p.ty,dt,k);p.presence=smooth(p.presence,p.tp,dt,k);
+  draw(now);
+  if(!settled()||pending)raf=requestAnimationFrame(frame);
+}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function point(e){return{x:clamp(e.clientX,0,W),y:clamp(e.clientY,0,H)}}
+addEventListener('pointermove',e=>{const q=point(e);p.tx=q.x;p.ty=q.y;p.tp=1;wake()},{passive:true});
+addEventListener('pointerdown',e=>{
+  if(e.button!==undefined&&e.button!==0)return;
+  const q=point(e);p.tx=q.x;p.ty=q.y;p.tp=1;
+  pending={slot:chosenSlot(q.x),born:performance.now(),delay:delayFor(q.y)};
+  wake();
+},{passive:true});
+document.documentElement.addEventListener('pointerleave',()=>{p.tp=0;wake()},{passive:true});
+addEventListener('resize',()=>{
+  W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,1.75);
+  c.width=Math.max(1,Math.round(W*D));c.height=Math.max(1,Math.round(H*D));ctx.setTransform(D,0,0,D,0,0);draw(performance.now());wake();
+},{passive:true});
+W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,1.75);
+c.width=Math.max(1,Math.round(W*D));c.height=Math.max(1,Math.round(H*D));ctx.setTransform(D,0,0,D,0,0);draw(performance.now());
+})();
+</script>
+</body>
+</html>
