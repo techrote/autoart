@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART e0005 — Core Memory</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020405}
+body{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#020405;touch-action:none}
+#hud{position:fixed;left:14px;top:12px;z-index:2;pointer-events:none;color:rgba(205,225,223,.54);font-size:9px;letter-spacing:.09em;line-height:1.45;text-transform:uppercase;transition:opacity .2s ease}
+#hud b{color:rgba(235,244,241,.84);font-weight:600}
+#hud .dim{opacity:.42}
+#keys{position:fixed;right:13px;bottom:10px;z-index:2;pointer-events:none;color:rgba(198,216,214,.21);font-size:8px;letter-spacing:.055em;text-align:right;transition:opacity .2s ease}
+.off{opacity:0!important}
+@media(max-width:640px){#hud{left:8px;top:7px;font-size:7px}#keys{right:8px;bottom:6px;font-size:6px;max-width:76vw}}
+</style>
+</head>
+<body>
+<canvas id="art" aria-label="Animated generative artwork titled Core Memory"></canvas>
+<div id="hud"><b>AUTOART e0005</b> // CORE MEMORY<br><span class="dim" id="status">section stable · prior cores retained</span></div>
+<div id="keys">POINTER bias · CLICK bore · SPACE hold · R reseed · H interface</div>
+<script>
+(() => {
+'use strict';
+
+const canvas=document.getElementById('art');
+const ctx=canvas.getContext('2d',{alpha:false});
+const residue=document.createElement('canvas');
+const rctx=residue.getContext('2d',{alpha:true});
+const scars=document.createElement('canvas');
+const sctx=scars.getContext('2d',{alpha:true});
+const hud=document.getElementById('hud'),keys=document.getElementById('keys'),status=document.getElementById('status');
+
+const BASE_SEED=0xE0005C0A>>>0;
+const STEP=1/60,TRACE_CAP=760,BORE_CAP=6;
+let W=1,H=1,DPR=1,seed=BASE_SEED,rng=makeRng(seed),tick=0,last=performance.now(),acc=0,paused=false,showUI=true;
+let traces=[],strata=[],fractures=[],bores=[];
+let anomaly=[];
+let probe={x:0,y:0,strength:0,active:false};
+
+function makeRng(s){let a=s>>>0;return()=>{a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+function hash32(x){x=(x^(x>>>16))>>>0;x=Math.imul(x,0x7feb352d)>>>0;x=(x^(x>>>15))>>>0;x=Math.imul(x,0x846ca68b)>>>0;return(x^(x>>>16))>>>0;}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+function rand(a,b){return a+(b-a)*rng();}
+
+function resize(){
+  W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);DPR=Math.min(devicePixelRatio||1,1.55);
+  const bw=Math.max(1,Math.floor(W*DPR)),bh=Math.max(1,Math.floor(H*DPR));
+  if(canvas.width===bw&&canvas.height===bh)return;
+  canvas.width=residue.width=scars.width=bw;canvas.height=residue.height=scars.height=bh;
+  ctx.setTransform(DPR,0,0,DPR,0,0);rctx.setTransform(DPR,0,0,DPR,0,0);sctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.imageSmoothingEnabled=rctx.imageSmoothingEnabled=sctx.imageSmoothingEnabled=true;
+  rebuild();
+}
+
+function rebuild(){
+  rng=makeRng(seed);tick=0;bores=[];probe.strength=0;
+  for(const c of [rctx,sctx]){c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,residue.width,residue.height);c.setTransform(DPR,0,0,DPR,0,0);}
+  anomaly=makeAnomaly();strata=makeStrata();fractures=makeFractures();
+  const n=clamp(Math.floor(W*H/1500),390,TRACE_CAP);traces=new Array(n);for(let i=0;i<n;i++)traces[i]=spawnTrace(i,true);
+  preloadOldScars();
+  for(let i=0;i<150;i++)simulate();
+  updateStatus();
+}
+
+function makeAnomaly(){
+  const r=makeRng(hash32(seed^0xA50C0DE));const m=Math.min(W,H);const cx=W*(.56+(r()-.5)*.06),cy=H*(.57+(r()-.5)*.04);
+  return [
+    {x:cx-m*.055,y:cy-m*.008,rx:m*(.115+r()*.018),ry:m*(.055+r()*.014),rot:-.18+(r()-.5)*.12},
+    {x:cx+m*.055,y:cy+m*.012,rx:m*(.105+r()*.018),ry:m*(.05+r()*.012),rot:.16+(r()-.5)*.12},
+    {x:cx+m*.005,y:cy+m*.058,rx:m*(.075+r()*.015),ry:m*(.04+r()*.01),rot:(r()-.5)*.3}
+  ];
+}
+
+function lobeMetric(l,x,y){const c=Math.cos(l.rot),s=Math.sin(l.rot),dx=x-l.x,dy=y-l.y,qx=(dx*c+dy*s)/l.rx,qy=(-dx*s+dy*c)/l.ry;return Math.hypot(qx,qy);}
+function anomalyField(x,y){let v=0;for(const l of anomaly){const m=lobeMetric(l,x,y);v=Math.max(v,Math.exp(-m*m*1.55));}return v;}
+function anomalyShell(x,y){let v=0;for(const l of anomaly){const m=lobeMetric(l,x,y);v=Math.max(v,Math.exp(-Math.pow((m-1)/.34,2)));}return v;}
+
+function makeStrata(){const r=makeRng(hash32(seed^0x57A7A5));const out=[];const n=W<650?22:32;for(let i=0;i<n;i++)out.push({y:(i+.45)/n*H,phase:r()*6.283,freq:.8+r()*2.2,amp:H*(.003+r()*.008),tilt:(r()-.5)*H*.025,salt:r()});return out;}
+function makeFractures(){const r=makeRng(hash32(seed^0xF2A501));const out=[];const m=Math.min(W,H);for(let i=0;i<9;i++){const a=r()*Math.PI*2,rad=m*(.16+r()*.16),len=m*(.025+r()*.07),cx=anomaly[0].x*.5+anomaly[1].x*.5,cy=anomaly[0].y*.5+anomaly[1].y*.5;out.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad*.7,a:a+(r()-.5)*1.1,len,phase:r()*6.283,salt:r()});}return out;}
+
+function spawnTrace(id,initial=false){let x,y;const q=rng();if(q<.72){x=rand(-25,W+25);y=rng()<.5?rand(-15,H*.32):rand(H*.68,H+15);}else{x=rng()<.5?rand(-18,W*.18):rand(W*.82,W+18);y=rand(-10,H+10);}return{id,x,y,px:x,py:y,vx:rand(-.08,.08),vy:rand(-.07,.07),age:initial?Math.floor(rng()*700):0,life:Math.floor(rand(750,1800)),phase:rng()*6.283,salt:rng(),width:rand(.3,.82)};}
+
+function nearestBoreDist(x,y){let best=1e9;for(const b of bores){const maxY=b.complete?b.endY:b.y;if(y<0||y>maxY)continue;const dx=x-b.xAt(y);best=Math.min(best,Math.abs(dx));}return best;}
+
+function fieldAt(x,y,t,p){
+  const n=Math.sin(x*.005+y*.0035+t*.022+p.phase)+.5*Math.cos(y*.008-x*.0027-t*.015);
+  let fx=.27*Math.cos(n*2.1)+.12*Math.sin(y*.004+t*.02),fy=.35+.16*Math.sin(n*1.8);
+  const sh=anomalyShell(x,y),af=anomalyField(x,y);
+  if(sh>.001||af>.001){const cx=(anomaly[0].x+anomaly[1].x+anomaly[2].x)/3,cy=(anomaly[0].y+anomaly[1].y+anomaly[2].y)/3,dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy)+.001;fx+=(dx/d)*sh*.85+(-dy/d)*sh*.5;fy+=(dy/d)*sh*.65+(dx/d)*sh*.5;if(af>.42){fx+=(dx/d)*af*.7;fy+=(dy/d)*af*.7;}}
+  if(probe.strength>.002){const px=x-probe.x,py=y-probe.y,d2=px*px+py*py+100,reach=Math.min(W,H)*.21,a=Math.exp(-d2/(reach*reach))*probe.strength,inv=1/Math.sqrt(d2);fx+=(-py*inv)*a*1.35+(px*inv)*a*.14;fy+=(px*inv)*a*1.35+(py*inv)*a*.14;}
+  const bd=nearestBoreDist(x,y);if(bd<34){const a=Math.exp(-(bd*bd)/(18*18));fx+=(Math.sin(y*.031+t*.2))*a*.7;fy-=a*.14;}
+  return[fx,fy];
+}
+
+function simulate(){
+  const t=tick*STEP;probe.strength*=.972;
+  for(const b of bores){if(!b.complete){advanceBore(b);}}
+  rctx.save();rctx.globalCompositeOperation='source-over';rctx.fillStyle='rgba(2,4,5,.014)';rctx.fillRect(0,0,W,H);rctx.globalCompositeOperation='lighter';
+  for(let i=0;i<traces.length;i++){
+    let p=traces[i];p.px=p.x;p.py=p.y;const f=fieldAt(p.x,p.y,t,p);p.vx=p.vx*.938+f[0]*.058;p.vy=p.vy*.938+f[1]*.058;
+    const mag=Math.hypot(p.vx,p.vy)||1,lim=1.85;if(mag>lim){p.vx*=lim/mag;p.vy*=lim/mag;}p.x+=p.vx;p.y+=p.vy;p.age++;
+    const near=anomalyShell(p.x,p.y),bd=nearestBoreDist(p.x,p.y),scar=bd<28?Math.exp(-(bd*bd)/(15*15)):0;
+    const c=p.salt>.82?[219,163,88]:p.salt>.34?[96,205,201]:[181,213,207];const a=.045+.11*near+.075*scar+.045*p.salt;
+    rctx.strokeStyle=`rgba(${c[0]},${c[1]},${c[2]},${a})`;rctx.lineWidth=p.width;rctx.beginPath();rctx.moveTo(p.px,p.py);rctx.lineTo(p.x,p.y);rctx.stroke();
+    if(p.x<-65||p.x>W+65||p.y<-65||p.y>H+65||p.age>p.life)traces[i]=spawnTrace(p.id,false);
+  }
+  rctx.restore();tick++;
+}
+
+function makeBore(x,targetY,old=false){
+  const r=makeRng(hash32(seed^((x|0)*2654435761)^((targetY|0)*2246822519)^bores.length));
+  const startY=H*.115,endY=clamp(targetY,H*.28,H*.91),phase=r()*6.283;
+  const b={baseX:x,startY,endY,y:startY,phase,salt:r(),complete:false,path:[{x,y:startY}],gaps:[],sampleNext:startY+18+r()*18,old};
+  b.xAt=(yy)=>{let px=b.baseX;for(const pt of b.path){if(pt.y<=yy)px=pt.x;else break;}return px;};
+  return b;
+}
+
+function preloadOldScars(){
+  const r=makeRng(hash32(seed^0x0D1C0DE));
+  for(let i=0;i<3;i++){const x=W*(.18+i*.28)+(r()-.5)*W*.045,target=H*(.5+r()*.34),b=makeBore(x,target,true);bores.push(b);while(!b.complete)advanceBore(b,true);}
+}
+
+function advanceBore(b,fast=false){
+  if(b.complete)return;const step=fast?4.5:.72;let x=b.path[b.path.length-1].x,y=b.y;const af=anomalyField(x,y),sh=anomalyShell(x,y);const drift=Math.sin(y*.018+b.phase)*.08+Math.sin(y*.007+seed*.00001)*.05;
+  x+=drift+sh*Math.sin(b.phase+y*.025)*.8+af*Math.sin(b.phase*2.1)*1.4;y=Math.min(b.endY,y+step);b.y=y;b.path.push({x,y});
+  const hit=af>.34;if(hit&&b.gaps.length===0)b.gaps.push({from:y,to:Math.min(b.endY,y+Math.max(18,H*.04))});
+  if(b.gaps.length&&b.gaps[0].to<y&&b.gaps.length===1)b.gaps.push({from:-1,to:-1});
+  if(y>=b.sampleNext){drawSampleTick(b,x,y,hit);b.sampleNext+=20+(hash32((y|0)^seed)&15);}
+  drawScarSegment(b,x,y,hit);
+  if(y>=b.endY-.01){b.complete=true;}
+}
+
+function drawScarSegment(b,x,y,hit){
+  const prev=b.path.length>1?b.path[b.path.length-2]:{x:b.baseX,y:b.startY};sctx.save();sctx.globalCompositeOperation='lighter';
+  sctx.strokeStyle=hit?'rgba(210,151,80,.13)':'rgba(172,220,214,.10)';sctx.lineWidth=hit?1.05:.65;sctx.beginPath();sctx.moveTo(prev.x,prev.y);sctx.lineTo(x,y);sctx.stroke();
+  if(hit){sctx.fillStyle='rgba(220,159,85,.055)';sctx.fillRect(x-5,y-1,10,1);}
+  sctx.restore();
+}
+function drawSampleTick(b,x,y,hit){sctx.save();sctx.globalCompositeOperation='lighter';sctx.strokeStyle=hit?'rgba(226,166,91,.28)':'rgba(121,220,214,.20)';sctx.lineWidth=.55;const len=hit?8:5;sctx.beginPath();sctx.moveTo(x-len,y);sctx.lineTo(x+len*.5,y);sctx.stroke();sctx.restore();}
+
+function addBore(x,y){if(bores.length>=BORE_CAP)bores.shift();bores.push(makeBore(clamp(x,8,W-8),y,false));updateStatus();}
+
+function strataY(s,x,t){const base=s.y+s.tilt*(x/W-.5)+Math.sin(x/W*Math.PI*2*s.freq+s.phase+t*.009)*s.amp;const af=anomalyField(x,base),sh=anomalyShell(x,base);let y=base+(sh*.012-af*.006)*H*Math.sin((x-W*.53)*.014+s.phase);for(const b of bores){if(base>b.startY&&base<(b.complete?b.endY:b.y)){const bx=b.xAt(base),dx=x-bx,d=Math.abs(dx);if(d<60)y+=Math.exp(-(d*d)/(30*30))*Math.sign(dx||1)*H*.0045;}}return y;}
+
+function drawBackground(){ctx.fillStyle='#020405';ctx.fillRect(0,0,W,H);const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'rgba(10,27,28,.17)');g.addColorStop(.5,'rgba(5,8,8,.02)');g.addColorStop(1,'rgba(34,20,11,.12)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+function drawStrata(t){ctx.save();ctx.globalCompositeOperation='screen';for(const s of strata){ctx.beginPath();let pen=false;for(let i=0;i<=70;i++){const x=i/70*W,y=strataY(s,x,t),af=anomalyField(x,y),bd=nearestBoreDist(x,y);const gap=(af>.55&&((i+(s.salt*13|0))%4!==0))||(bd<4&&i%2===0);if(gap){pen=false;continue;}if(!pen){ctx.moveTo(x,y);pen=true}else ctx.lineTo(x,y);}const a=.07+s.salt*.115;ctx.strokeStyle=s.salt>.84?`rgba(218,161,86,${a})`:`rgba(104,206,202,${a})`;ctx.lineWidth=.48+s.salt*.17;ctx.stroke();}ctx.restore();}
+function drawFractures(t){ctx.save();ctx.globalCompositeOperation='screen';for(const f of fractures){const pulse=.65+.35*Math.sin(t*.041+f.phase),x2=f.x+Math.cos(f.a)*f.len,y2=f.y+Math.sin(f.a)*f.len;ctx.strokeStyle=f.salt>.72?`rgba(216,161,88,${.04+.055*pulse})`:`rgba(110,211,207,${.032+.045*pulse})`;ctx.lineWidth=.42;ctx.setLineDash([1,5]);ctx.lineDashOffset=-t*.08;ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(x2,y2);ctx.stroke();}ctx.setLineDash([]);ctx.restore();}
+function drawSurface(){ctx.save();ctx.globalCompositeOperation='screen';const y=H*.115;ctx.strokeStyle='rgba(188,218,214,.055)';ctx.lineWidth=.45;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();for(const b of bores){const x=b.path[0].x;ctx.strokeStyle=b.salt>.65?'rgba(219,163,89,.18)':'rgba(105,214,209,.16)';ctx.beginPath();ctx.moveTo(x-4,y-3);ctx.lineTo(x+4,y-3);ctx.stroke();}ctx.restore();}
+function drawActiveBores(){ctx.save();ctx.globalCompositeOperation='screen';for(const b of bores){if(b.complete)continue;const p=b.path[b.path.length-1];ctx.strokeStyle='rgba(226,235,229,.22)';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(p.x-5,p.y);ctx.lineTo(p.x+5,p.y);ctx.stroke();ctx.fillStyle='rgba(216,162,88,.16)';ctx.fillRect(p.x-1,p.y-1,2,2);}ctx.restore();}
+function drawScan(t){const y=((t*.011)%1)*(H*1.15)-H*.075;ctx.save();ctx.globalCompositeOperation='screen';ctx.strokeStyle='rgba(210,236,231,.038)';ctx.lineWidth=.42;ctx.beginPath();ctx.moveTo(0,y-18);ctx.lineTo(W,y+18);ctx.stroke();ctx.restore();}
+function drawFrame(t){drawBackground();drawStrata(t);ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=.96;ctx.drawImage(residue,0,0,residue.width,residue.height,0,0,W,H);ctx.drawImage(scars,0,0,scars.width,scars.height,0,0,W,H);ctx.restore();drawFractures(t);drawSurface();drawActiveBores();drawScan(t);const vg=ctx.createRadialGradient(W*.53,H*.52,Math.min(W,H)*.18,W*.53,H*.52,Math.max(W,H)*.8);vg.addColorStop(.48,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.36)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);}
+
+function updateStatus(){const drilling=bores.some(b=>!b.complete);status.textContent=`${paused?'section held':drilling?'core descent active':probe.strength>.08?'local material biased':'section stable · prior cores retained'} · seed ${seed.toString(16).toUpperCase().padStart(8,'0')}`;}
+function frame(now){const dt=Math.min(.08,(now-last)/1000);last=now;if(!paused){acc+=dt;let guard=0;while(acc>=STEP&&guard++<5){simulate();acc-=STEP;}}drawFrame(tick*STEP);if((tick&15)===0)updateStatus();requestAnimationFrame(frame);}
+function setProbe(x,y,s){probe.x=x;probe.y=y;probe.active=true;probe.strength=clamp(Math.max(probe.strength,s),0,1.4);}
+function reseed(){seed=hash32(seed+0x9E3779B9);rebuild();}
+
+addEventListener('resize',resize,{passive:true});
+canvas.addEventListener('pointermove',e=>setProbe(e.clientX,e.clientY,.55),{passive:true});
+canvas.addEventListener('pointerdown',e=>{setProbe(e.clientX,e.clientY,.95);addBore(e.clientX,e.clientY);},{passive:true});
+canvas.addEventListener('pointerleave',()=>{probe.active=false;},{passive:true});
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();paused=!paused;updateStatus();}else if(e.key==='r'||e.key==='R')reseed();else if(e.key==='h'||e.key==='H'){showUI=!showUI;hud.classList.toggle('off',!showUI);keys.classList.toggle('off',!showUI);}});
+resize();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
