@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>AUTOART 0029 — A Score Without Permission</title>
+<style>
+:root{--paper:#e7e9e4;--ink:#1f2a30;--muted:#61716f;--copper:#a95037}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink)}
+body{font-family:Georgia,'Times New Roman',serif}
+main{position:relative;width:100%;height:100dvh;min-height:570px;overflow:hidden;background:linear-gradient(170deg,#e8eae6 4%,#d7dedb 65%,#d0d9d6 100%)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+header{position:absolute;z-index:2;top:clamp(24px,5vw,65px);left:clamp(22px,5vw,72px);pointer-events:none;max-width:600px}
+.eyebrow,.detail,.instructions,.status,.controls,.folio{font:11px/1.6 ui-monospace,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase}
+.eyebrow{color:var(--copper);font-weight:bold}
+h1{font-weight:normal;font-size:clamp(44px,6.1vw,88px);line-height:.91;letter-spacing:-.067em;margin:18px 0 14px}
+h1 em{font-weight:normal;color:#667f7e}
+.description{max-width:410px;font-size:clamp(15px,1.35vw,18px);line-height:1.4;margin:0;color:#37474b}
+.folio{position:absolute;right:clamp(22px,5vw,72px);top:clamp(29px,5vw,69px);text-align:right;color:#647775;z-index:2}
+footer{position:absolute;left:clamp(22px,5vw,72px);right:clamp(22px,5vw,72px);bottom:clamp(23px,3.9vw,49px);z-index:2;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:18px 28px}
+.status{font-weight:700;color:#9f4832;max-width:620px}
+.instructions{margin-top:6px;max-width:650px;letter-spacing:.075em;color:#43575a}
+.controls{display:flex;gap:9px;flex-wrap:wrap}.controls button{font:inherit;letter-spacing:.06em;border:1px solid #556e70;background:#e8ede8;color:#233437;padding:10px 13px;min-height:42px;cursor:pointer}
+.controls button:hover,.controls button:focus-visible{outline:2px solid #a95037;outline-offset:3px;background:#243c40;color:#f2ebe2}
+.controls button[aria-pressed="true"]{background:#243c40;color:#f2ebe2}
+@media(max-width:650px){header{top:20px;left:21px;right:21px}h1{font-size:clamp(41px,11.7vw,62px);margin:12px 0}.description{font-size:14px;max-width:290px}.folio{display:none}footer{left:20px;right:20px;bottom:17px;gap:12px}.eyebrow,.status,.instructions,.controls{font-size:10px;letter-spacing:.045em}.instructions{max-width:340px}.controls button{padding:8px 10px;min-height:39px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+<canvas id="sky" role="img" aria-label="Over a ruled five-line musical staff, more than a hundred ink-black birds refuse to stay in place. Drag through the flock to push it off the lines. The changing birds form a silent, unrepeatable score."></canvas>
+<header><div class="eyebrow">AUTOART / 0029 · A notation for unowned movement</div><h1>A Score<br><em>Without Permission</em></h1><p class="description">The birds are not notes. The lines have only been drawn beneath them.</p></header>
+<div class="folio">NO SOUND IS GENERATED<br>NO BIRD REMAINS IN TIME</div>
+<footer><div><div class="status" id="status" role="status" aria-live="polite">THE FLOCK / TEMPORARILY LEGIBLE</div><div class="instructions">Drag across the flock · ← → alter wind · G release · Space hold · R reseat</div></div><div class="controls"><button id="release" type="button">LET THEM GO ↗</button><button id="hold" type="button" aria-pressed="false">HOLD ∥</button><button id="reset" type="button">RESEAT ↺</button></div></footer>
+</main>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('sky'),ctx=canvas.getContext('2d',{alpha:false}),status=document.getElementById('status'),hold=document.getElementById('hold');
+const prefersStill=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let W=0,H=0,dpr=1,s=1,ox=0,oy=0,time=0,previous=0,held=prefersStill,gesture=0,wind=0,dirty=true,dragging=false,anchor=null;
+const birds=[],count=126;
+// Identity is stable across reloads. No per-frame allocation of bird or history objects.
+function fract(x){return x-Math.floor(x)}
+function random(i,k){return fract(Math.sin((i+1)*127.1+(k+1)*311.7)*43758.5453123)}
+for(let i=0;i<count;i++){
+ const col=i%42,row=Math.floor(i/42),u=col/41;
+ const x=182+u*1084+(random(i,0)-.5)*54;
+ const y=338+row*67+Math.sin(u*6.4+row*.72)*67+(random(i,1)-.5)*57;
+ birds.push({homeX:x,homeY:y,x,y,goalX:x,goalY:y,vx:0,vy:0,scale:5+random(i,2)*16,phase:random(i,3)*6.283,tint:random(i,4)>.92});
+}
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,1.6);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
+ s=W<650?Math.max(W/700,H/1230):Math.max(W/1440,H/900);ox=W*.5-720*s;oy=H*(W<650?.57:.5)-450*s;dirty=true}
+function coordinates(e){return {x:(e.clientX-ox)/s,y:(e.clientY-oy)/s}}
+function drawBird(b){let a=Math.sin(time*2.1+b.phase)*.19,flap=Math.sin(time*3.2+b.phase)*(.08+Math.min(.42,Math.abs(b.vx+b.vy)/700));
+ ctx.save();ctx.translate(b.x,b.y);ctx.rotate(a*.28);ctx.lineWidth=Math.max(1.3,b.scale*.18);ctx.lineCap='round';ctx.strokeStyle=b.tint?'#925441':'#202d32';ctx.beginPath();ctx.moveTo(-b.scale,2);ctx.quadraticCurveTo(-b.scale*.52,-b.scale*(.75+flap),0,0);ctx.quadraticCurveTo(b.scale*.52,-b.scale*(.75-flap),b.scale,2);ctx.stroke();
+ ctx.lineWidth=Math.max(.8,b.scale*.12);ctx.beginPath();ctx.moveTo(-b.scale*.21,.5);ctx.lineTo(b.scale*.25,1);ctx.stroke();ctx.restore()}
+function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#dfe4df';ctx.fillRect(0,0,W,H);
+ ctx.save();ctx.translate(ox,oy);ctx.scale(s,s);
+ // Five ruled lines remain immovable. The birds, not the score, carry time.
+ ctx.strokeStyle='rgba(57,86,89,.35)';ctx.lineWidth=1.4;for(let k=0;k<5;k++){let y=370+k*33;ctx.beginPath();ctx.moveTo(79,y);ctx.lineTo(1361,y);ctx.stroke()}
+ ctx.strokeStyle='rgba(57,86,89,.21)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(82,352);ctx.lineTo(82,524);ctx.moveTo(1358,352);ctx.lineTo(1358,524);ctx.stroke();
+ ctx.fillStyle='#718482';ctx.font='12px ui-monospace,monospace';ctx.fillText('A LINE IS NOT AN INSTRUCTION',91,558);ctx.textAlign='right';ctx.fillText('NOTATION / UNSIGNED',1353,558);ctx.textAlign='left';
+ for(let b of birds)drawBird(b);
+ if(anchor&&dragging){ctx.strokeStyle='rgba(162,80,57,.75)';ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(anchor.x,anchor.y,38,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(anchor.x-52,anchor.y);ctx.lineTo(anchor.x+52,anchor.y);ctx.stroke()}
+ // Quiet index marks form a measured frame around what cannot be measured.
+ ctx.strokeStyle='rgba(90,112,111,.45)';for(let x=170;x<1300;x+=86){ctx.beginPath();ctx.moveTo(x,581);ctx.lineTo(x,587);ctx.stroke()}
+ ctx.restore();}
+function readout(message){status.textContent=message;hold.setAttribute('aria-pressed',held);hold.textContent=held?'RESUME ▶':'HOLD ∥'}
+function gust(x,y,strengthX,strengthY){gesture++;for(let i=0;i<count;i++){
+ const b=birds[i],dx=b.x-x,dy=b.y-y,dist=Math.hypot(dx,dy),reach=Math.max(0,1-dist/500),salt=random(i,gesture%37);
+ const impulse=reach*reach,bias=(salt-.5)*88;
+ b.goalX=Math.max(80,Math.min(1360,b.goalX+strengthX*impulse+bias*impulse));
+ b.goalY=Math.max(185,Math.min(722,b.goalY+strengthY*impulse+((random(i+29,gesture%31)-.5)*165)*impulse));
+ if(!held){b.vx+=strengthX*impulse*.8;b.vy+=strengthY*impulse*.8}
+ else{b.x=b.goalX;b.y=b.goalY;b.vx=b.vy=0}
+ }dirty=true;readout('THE FLOCK / '+String(gesture).padStart(2,'0')+' UNAUTHORIZED DEPARTURES')}
+function release(){gust(720,439,(gesture%2?-1:1)*190,-155);readout('THE FLOCK / THE PAGE NO LONGER CONTAINS IT')}
+function toggle(){held=!held;readout(held?'THE AIR / HELD':'THE AIR / MOVING');dirty=true}
+function reset(){gesture=0;wind=0;time=0;previous=0;held=prefersStill;for(let b of birds){b.x=b.goalX=b.homeX;b.y=b.goalY=b.homeY;b.vx=b.vy=0}readout('THE FLOCK / TEMPORARILY LEGIBLE');dirty=true}
+function animate(now){if(!previous)previous=now;const dt=Math.min(.04,Math.max(0,(now-previous)/1000));previous=now;
+ if(!held){time+=dt;for(let b of birds){let ax=(b.goalX-b.x)*11.5-b.vx*5.5+wind*2.6,ay=(b.goalY-b.y)*11.5-b.vy*5.5;b.vx+=ax*dt;b.vy+=ay*dt;b.x+=b.vx*dt;b.y+=b.vy*dt}wind*=Math.exp(-dt*1.3);dirty=true}
+ if(dirty){draw();dirty=false}requestAnimationFrame(animate)}
+canvas.addEventListener('pointerdown',e=>{dragging=true;anchor=coordinates(e);canvas.setPointerCapture(e.pointerId);dirty=true});
+canvas.addEventListener('pointermove',e=>{if(!dragging||!anchor)return;let p=coordinates(e),dx=p.x-anchor.x,dy=p.y-anchor.y;if(Math.hypot(dx,dy)>21){gust(p.x,p.y,Math.max(-225,Math.min(225,dx*6)),-40+Math.max(-150,Math.min(150,dy*4)));anchor=p}});
+function end(){dragging=false;anchor=null;dirty=true}canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);canvas.addEventListener('lostpointercapture',end);
+document.getElementById('release').addEventListener('click',release);hold.addEventListener('click',toggle);document.getElementById('reset').addEventListener('click',reset);
+window.addEventListener('keydown',e=>{if(e.altKey||e.metaKey||e.ctrlKey||['BUTTON','INPUT','TEXTAREA'].includes(e.target.tagName))return;
+ const k=e.key;if(['ArrowLeft','ArrowRight',' ','r','R','g','G'].includes(k))e.preventDefault();
+ if(k==='ArrowLeft'){wind-=140;gust(1010,450,-160,-70)}else if(k==='ArrowRight'){wind+=140;gust(410,450,160,-70)}else if(k.toLowerCase()==='g')release();else if(k===' ')toggle();else if(k.toLowerCase()==='r')reset()});
+addEventListener('resize',resize);resize();reset();requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
