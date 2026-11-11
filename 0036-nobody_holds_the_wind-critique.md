@@ -1,4 +1,3 @@
-
 # Critique — AUTOART 0036: Nobody Holds the Wind
 
 ## Encounter
