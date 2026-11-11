@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>AUTOART 0030 — The Fruit Does Not Open Evenly</title>
+<style>
+:root{--paper:#eac9a6;--ink:#361b2a;--wine:#6d1738;--red:#c04b42;--muted:#895750}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink)}
+body{font-family:Georgia,'Times New Roman',serif}
+main{min-height:100dvh;display:grid;grid-template-columns:minmax(340px,35%) minmax(0,65%);background:radial-gradient(ellipse at 63% 47%,#f1dfbd 0%,#eac7a6 65%,#dbb18f 100%);overflow:hidden}
+aside{position:relative;z-index:2;padding:clamp(30px,5vw,83px) 15px 45px clamp(28px,5vw,75px);display:flex;flex-direction:column;min-height:720px}
+.serial,.folio,.instructions,.status,.legend,.buttons button{font:11px/1.6 ui-monospace,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase}
+.serial{color:#a5473c;font-weight:bold}
+h1{font-size:clamp(52px,5.65vw,87px);line-height:.99;letter-spacing:-.067em;font-weight:normal;margin:35px 0 21px;max-width:530px}
+h1 em{color:#aa3a42;font-weight:normal}
+.dek{font-size:clamp(17px,1.35vw,20px);line-height:1.38;max-width:340px;margin:0;color:#633b3c}
+.spacer{flex:1;min-height:40px}
+.rules{width:70px;height:1px;background:#b45a4d;margin:0 0 20px}
+.status{color:#9a3441;font-weight:bold;min-height:34px;max-width:420px}
+.instructions{margin:8px 0 16px;color:#6e4446;max-width:365px;letter-spacing:.06em}
+.buttons{display:flex;flex-wrap:wrap;gap:8px;max-width:390px}
+.buttons button{font-size:10px;letter-spacing:.06em;min-height:42px;cursor:pointer;padding:11px 13px;border:1px solid #713d49;background:#f5dfbf;color:#4f2637}
+.buttons button:hover,.buttons button:focus-visible{outline:2px solid #af333d;outline-offset:2px;color:white;background:#63253b}
+.buttons button[aria-pressed="true"]{background:#63253b;color:#ffe9d5}
+.legend{margin:26px 0 0;letter-spacing:.075em;font-size:10px;color:#85564f}
+.stage{position:relative;min-height:720px;overflow:hidden;isolation:isolate}
+.stage:before{content:'';position:absolute;inset:5% 5% 7% 3%;border:1px solid rgba(129,72,67,.22);pointer-events:none}
+canvas{display:block;width:100%;height:100%;min-height:720px;touch-action:manipulation;cursor:pointer}
+.folio{position:absolute;top:35px;right:50px;color:#925851;text-align:right;pointer-events:none;font-size:10px}
+.stamp{position:absolute;bottom:30px;right:48px;color:#955d57;font:10px/1.7 ui-monospace,monospace;text-align:right;letter-spacing:.11em;pointer-events:none}
+@media(max-width:760px){main{display:block;min-height:100dvh}aside{padding:25px 24px 14px;min-height:unset;display:block}h1{font-size:clamp(43px,10vw,72px);max-width:500px;margin:14px 0 8px;line-height:.96}.dek{font-size:15px;max-width:460px}.spacer,.rules{display:none}.status{margin-top:16px;min-height:unset}.instructions{margin:5px 0 10px}.buttons{max-width:unset}.buttons button{min-height:38px;padding:8px 10px}.legend{margin:10px 0 0}.stage{min-height:0;height:min(90vw,530px)}canvas{min-height:0}.folio{top:10px;right:22px}.stamp{bottom:8px;right:21px;font-size:9px}.stage:before{inset:2% 4% 2%}.folio,.stamp{display:none}}
+@media(max-width:410px){.buttons{gap:6px}.buttons button{font-size:9px;padding:7px 9px}.legend{font-size:9px}h1{font-size:clamp(41px,10.7vw,53px)}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+<aside>
+  <div class="serial">AUTOART / 0030 · A STUDY IN UNEQUAL OPENING</div>
+  <h1>The Fruit<br>Does Not<br><em>Open Evenly</em></h1>
+  <p class="dek">Five chambers hold the same red. None agrees on when to surrender it.</p>
+  <div class="spacer"></div><div class="rules"></div>
+  <div class="status" id="status" role="status" aria-live="polite">A WHOLE FRUIT / FIVE PRIVATE CHAMBERS</div>
+  <div class="instructions">Choose a chamber 1–5 or touch the cut fruit. ← → select · Enter part · A open all · Space hold · R restore.</div>
+  <div class="buttons">
+    <button id="part" type="button">PART THIS CHAMBER</button>
+    <button id="all" type="button">OPEN ALL FIVE</button>
+    <button id="hold" type="button" aria-pressed="false">HOLD ∥</button>
+    <button id="restore" type="button">RESTORE ↺</button>
+  </div>
+  <div class="legend">NO SEED FALLS OUT · NOTHING IS HARVESTED</div>
+</aside>
+<section class="stage" aria-label="A large pomegranate cut into five unevenly opening segments">
+  <div class="folio">BOTANICAL STUDY / 30<br>SECTION / UNRELIABLE</div>
+  <canvas id="fruit" role="img" aria-label="An enormous cut pomegranate, its deep ruby seeds tightly contained in five cream-rimmed chambers. Choose a chamber to separate it, revealing bright buried filaments. Nothing falls away."></canvas>
+  <div class="stamp">FIG. 30 / PUNICA GRANATUM<br>NOT A DIAGRAM OF ANATOMY</div>
+</section>
+</main>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('fruit'),ctx=canvas.getContext('2d',{alpha:false});
+const status=document.getElementById('status'),holdButton=document.getElementById('hold'),partButton=document.getElementById('part');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TAU=Math.PI*2, N=5, cx=472,cy=429, base=-Math.PI/2-.20, slice=TAU/N;
+let w=0,h=0,dpr=1,s=1,tx=0,ty=0,elapsed=0,last=0,held=reduce,dirty=true,selected=0,gesture=0;
+const chambers=Array.from({length:N},(_,i)=>({open:0,target:0,speed:[.7,1.1,.52,1.35,.88][i],angle:base+(i+.5)*slice}));
+function rnd(i,k){let x=Math.sin((i+1)*127.31+(k+1)*318.17)*43758.5453123;return x-Math.floor(x)}
+const seeds=[];
+for(let j=0;j<N;j++)for(let ring=0;ring<5;ring++){
+ const n=[5,7,9,11,13][ring];for(let k=0;k<n;k++){
+  let i=j*300+ring*41+k,a=base+j*slice+.14+(k+.54+(rnd(i,0)-.5)*.28)/n*(slice-.28);
+  let r=78+ring*42+(rnd(i,1)-.5)*24;
+  seeds.push({j,x:Math.cos(a)*r,y:Math.sin(a)*r,angle:a+(rnd(i,2)-.5)*.52, size:8.8+8.4*rnd(i,3)+ring*.5,shade:rnd(i,4),glow:rnd(i,5)});
+ }
+}
+const flecks=Array.from({length:110},(_,i)=>({x:rnd(i,7)*940,y:rnd(i,8)*820,r:0.45+rnd(i,9)*1.4}));
+function size(){const rect=canvas.getBoundingClientRect();w=rect.width;h=rect.height;dpr=Math.min(devicePixelRatio||1,1.75);
+ canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+ s=Math.min(w/960,h/820)*1.04;tx=(w-960*s)*.5;ty=(h-820*s)*.51;dirty=true}
+function pathSlice(a0,a1,rOut=309,rIn=52){
+ ctx.beginPath();let steps=48;
+ for(let k=0;k<=steps;k++){let a=a0+(a1-a0)*k/steps,r=rOut+8*Math.sin(a*5.2)+5*Math.sin(a*11+.2);let x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;k?ctx.lineTo(x,y):ctx.moveTo(x,y)}
+ for(let k=steps;k>=0;k--){let a=a0+(a1-a0)*k/steps,r=rIn+5*Math.sin(a*6);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r)}ctx.closePath();
+}
+function seedDraw(z){const x=cx+z.x,y=cy+z.y;
+ ctx.save();ctx.translate(x,y);ctx.rotate(z.angle+Math.PI/2);
+ let sz=z.size,grad=ctx.createLinearGradient(-sz,-sz,sz*.9,sz*1.2);
+ if(z.shade<.15){grad.addColorStop(0,'#ffe1a4');grad.addColorStop(.34,'#d6696b');grad.addColorStop(1,'#641532')}
+ else if(z.shade<.48){grad.addColorStop(0,'#f8b09a');grad.addColorStop(.48,'#c33b54');grad.addColorStop(1,'#651336')}
+ else{grad.addColorStop(0,'#f8c0a0');grad.addColorStop(.42,'#ac294b');grad.addColorStop(1,'#521330')}
+ ctx.fillStyle=grad;ctx.strokeStyle='rgba(63,17,37,.68)';ctx.lineWidth=1.3;
+ ctx.beginPath();ctx.moveTo(0,-sz*1.1);ctx.bezierCurveTo(sz*.9,-sz*.96,sz*1.25,sz*.08,sz*.65,sz*.83);ctx.quadraticCurveTo(0,sz*1.31,-sz*.68,sz*.83);ctx.bezierCurveTo(-sz*1.23,0,-sz*.81,-sz*.96,0,-sz*1.1);ctx.fill();ctx.stroke();
+ ctx.strokeStyle='rgba(255,231,211,.7)';ctx.lineWidth=Math.max(1.5,sz*.14);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-sz*.56,-sz*.22);ctx.quadraticCurveTo(-sz*.24,-sz*.91,sz*.2,-sz*.74);ctx.stroke();
+ ctx.fillStyle='rgba(255,234,201,.43)';ctx.beginPath();ctx.ellipse(sz*.22,sz*.44,sz*.14,sz*.24,.5,0,TAU);ctx.fill();ctx.restore();}
+function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#ecd2ae';ctx.fillRect(0,0,w,h);
+ // The paper is a material, not a UI behind the specimen.
+ ctx.save();ctx.translate(tx,ty);ctx.scale(s,s);
+ let bg=ctx.createRadialGradient(cx-75,cy-130,80,cx,cy,480);bg.addColorStop(0,'#f6e5c6');bg.addColorStop(.73,'#efd3af');bg.addColorStop(1,'#e3b991');ctx.fillStyle=bg;ctx.fillRect(0,0,960,820);
+ for(let f of flecks){ctx.fillStyle='rgba(135,65,60,.16)';ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,TAU);ctx.fill()}
+ // A fine offset engraving and the stem's papery crown supply scale.
+ ctx.strokeStyle='rgba(114,59,66,.17)';ctx.lineWidth=1;for(let r of [338,349,360]){ctx.beginPath();ctx.arc(cx,cy,r,.12,TAU-.06);ctx.stroke()}
+ for(let k=0;k<72;k++){let a=k*TAU/72,r=359+(k%6)*3;ctx.strokeStyle='rgba(136,80,71,.26)';ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.lineTo(cx+Math.cos(a)*(r+8),cy+Math.sin(a)*(r+8));ctx.stroke()}
+ // One outer silhouette and shadow. Open sections still retain the memory of its circle.
+ ctx.save();ctx.shadowColor='rgba(75,25,36,.33)';ctx.shadowBlur=35;ctx.shadowOffsetX=25;ctx.shadowOffsetY=33;
+ ctx.fillStyle='#672238';ctx.beginPath();ctx.arc(cx,cy,311,0,TAU);ctx.fill();ctx.restore();
+ const deep=ctx.createRadialGradient(cx-50,cy-40,40,cx,cy,315);deep.addColorStop(0,'#9d4d55');deep.addColorStop(.3,'#5c1b3d');deep.addColorStop(1,'#280f2e');ctx.fillStyle=deep;ctx.beginPath();ctx.arc(cx,cy,304,0,TAU);ctx.fill();
+ for(let k=0;k<150;k++){const a=k*2.399963,rr=42+Math.sqrt(k/150)*265;ctx.strokeStyle=k%5?'rgba(255,201,126,.20)':'rgba(250,216,167,.35)';ctx.lineWidth=.75+(k%3)*.5;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);ctx.quadraticCurveTo(cx+Math.cos(a+.10)*(rr+13),cy+Math.sin(a+.10)*(rr+13),cx+Math.cos(a+.20)*(rr+34),cy+Math.sin(a+.20)*(rr+34));ctx.stroke()}
+ const core=ctx.createRadialGradient(cx-16,cy-18,4,cx,cy,66);core.addColorStop(0,'#f9daa7');core.addColorStop(.4,'#c76f6b');core.addColorStop(1,'#691938');ctx.fillStyle=core;ctx.beginPath();ctx.arc(cx,cy,62,0,TAU);ctx.fill();
+ // Five independent wedges remain visibly connected by the dark, fibrous centre.
+ for(let j=0;j<N;j++){
+  const C=chambers[j],a0=base+j*slice+.022,a1=base+(j+1)*slice-.022,dx=Math.cos(C.angle)*C.open*58,dy=Math.sin(C.angle)*C.open*58;
+  ctx.save();ctx.translate(dx,dy);
+  pathSlice(a0,a1,315,53);
+  ctx.shadowColor='rgba(44,12,34,.45)';ctx.shadowBlur=C.open*16+9;ctx.shadowOffsetX=C.open*10;ctx.shadowOffsetY=C.open*10;
+  ctx.fillStyle='#f1bd83';ctx.fill();ctx.shadowColor='transparent';
+  ctx.strokeStyle='#7f2939';ctx.lineWidth=10;ctx.stroke();
+  // Membrane: the pale pith is uneven, with a translucent salmon rim.
+  ctx.save();pathSlice(a0+.036,a1-.036,290,68);ctx.clip();
+  let flesh=ctx.createRadialGradient(cx-35,cy-25,15,cx,cy,330);flesh.addColorStop(0,'#5b1635');flesh.addColorStop(.51,j%2?'#a82945':'#8b1d41');flesh.addColorStop(.85,'#bf4d4d');flesh.addColorStop(1,'#eea17e');ctx.fillStyle=flesh;ctx.fillRect(cx-380,cy-380,760,760);
+  // Visible pith threads attach each seed pocket to the cut boundary.
+  for(let t=0;t<19;t++){const a=a0+.08+(a1-a0-.16)*(t+.38)/19,r1=66+(t%3)*18,r2=276;
+   ctx.strokeStyle='rgba(254,207,168,.17)';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);ctx.quadraticCurveTo(cx+Math.cos(a+.08)*174,cy+Math.sin(a+.08)*174,cx+Math.cos(a+.018)*r2,cy+Math.sin(a+.018)*r2);ctx.stroke()}
+  for(let z of seeds){if(z.j===j)seedDraw(z)}
+  ctx.restore();
+  // Creamy interior ridge: an outline belonging to the flesh, not a screen-space filter.
+  pathSlice(a0+.035,a1-.035,290,68);ctx.strokeStyle='rgba(255,222,173,.96)';ctx.lineWidth=12;ctx.stroke();
+  pathSlice(a0+.035,a1-.035,290,68);ctx.strokeStyle='rgba(123,46,57,.65)';ctx.lineWidth=2;ctx.stroke();
+  // The crown-facing radial fibers buckle only when this chamber is opened.
+  let ar=C.angle,rr=305;ctx.strokeStyle='rgba(255,211,153,.8)';ctx.lineWidth=1.4;
+  for(let t=-3;t<=3;t++){let a=ar+t*.10;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*(rr-13),cy+Math.sin(a)*(rr-13));ctx.quadraticCurveTo(cx+Math.cos(a+.014)*(rr+9),cy+Math.sin(a+.014)*(rr+9),cx+Math.cos(a+.04)*(rr+22),cy+Math.sin(a+.04)*(rr+22));ctx.stroke()}
+  ctx.restore();
+ }
+ // Five small sepals; unlike the wedges they never transform or leave the fruit.
+ ctx.save();ctx.translate(cx-7,cy-308);ctx.fillStyle='#7d4b38';ctx.strokeStyle='#e3ad75';ctx.lineWidth=3;
+ for(let k=0;k<5;k++){ctx.save();ctx.rotate((k-2)*.26);ctx.beginPath();ctx.moveTo(-12,7);ctx.quadraticCurveTo(-25,-34,-9,-67);ctx.quadraticCurveTo(12,-47,20,7);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}ctx.restore();
+ if(w>650){ctx.fillStyle='#71354a';ctx.font='12px ui-monospace,monospace';ctx.fillText('SECTION V / OPEN WITH CARE',77,744);ctx.textAlign='right';ctx.fillText('THE PARTS REMAIN',879,744);ctx.textAlign='left';}
+ // Selection indicator deliberately sits outside the biological drawing.
+ const c=chambers[selected],a=c.angle,r=389;
+ ctx.strokeStyle='#8d3944';ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(cx,cy,r,a-.105,a+.105);ctx.stroke();
+ ctx.fillStyle='#8d3944';ctx.font='bold 16px ui-monospace,monospace';ctx.save();ctx.translate(cx+Math.cos(a)*416,cy+Math.sin(a)*416);ctx.fillText(String(selected+1).padStart(2,'0'),-10,4);ctx.restore();
+ ctx.restore();}
+function readout(message){status.textContent=message;holdButton.textContent=held?'RESUME ▶':'HOLD ∥';holdButton.setAttribute('aria-pressed',held);partButton.textContent=chambers[selected].target>.5?'RETURN THIS CHAMBER':'PART THIS CHAMBER'}
+function choose(j){selected=(j+N)%N;readout('CHAMBER '+String(selected+1).padStart(2,'0')+' / '+(chambers[selected].target>.5?'PARTED':'STILL HELD'));dirty=true}
+function part(j=selected){selected=j;let c=chambers[j];c.target=c.target>.5?0:1;gesture++;if(held)c.open=c.target;dirty=true;readout('CHAMBER '+String(j+1).padStart(2,'0')+(c.target?' / MOVING OUTWARD':' / RETURNING INWARD'))}
+function all(){let open=chambers.some(c=>c.target<.5);for(let c of chambers){c.target=open?1:0;if(held)c.open=c.target}gesture++;dirty=true;readout(open?'ALL FIVE / NOT AT THE SAME SPEED':'ALL FIVE / RETURNING')}
+function toggle(){held=!held;dirty=true;readout(held?'TIME / HELD':'TIME / RESUMED')}
+function restore(){for(let c of chambers)c.target=c.open=0;selected=0;elapsed=0;gesture=0;held=reduce;dirty=true;readout('A WHOLE FRUIT / FIVE PRIVATE CHAMBERS')}
+function hit(e){const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left-tx)/s-cx,y=(e.clientY-rect.top-ty)/s-cy,r=Math.hypot(x,y);if(r<45||r>410)return -1;let a=Math.atan2(y,x);let k=Math.floor((((a-base)%TAU)+TAU)%TAU/slice);return Math.min(N-1,Math.max(0,k))}
+canvas.addEventListener('pointerdown',e=>{let j=hit(e);if(j>=0)part(j)});
+partButton.addEventListener('click',()=>part());document.getElementById('all').addEventListener('click',all);holdButton.addEventListener('click',toggle);document.getElementById('restore').addEventListener('click',restore);
+addEventListener('keydown',e=>{if(e.altKey||e.metaKey||e.ctrlKey||['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;let k=e.key;
+ if(e.target.tagName==='BUTTON'&&(k==='Enter'||k===' '))return;
+ if(['ArrowRight','ArrowLeft',' ','Enter','r','R','a','A','1','2','3','4','5'].includes(k))e.preventDefault();
+ if(k==='ArrowRight')choose(selected+1);else if(k==='ArrowLeft')choose(selected-1);else if(k==='Enter')part();else if(k===' ')toggle();else if(k.toLowerCase()==='a')all();else if(k.toLowerCase()==='r')restore();else if(/^[1-5]$/.test(k))part(Number(k)-1)});
+function frame(now){if(!last)last=now;let dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
+ if(!held){elapsed+=dt;for(let c of chambers){let dif=c.target-c.open;if(Math.abs(dif)>.0001){c.open+=dif*Math.min(1,dt*c.speed*3.2);dirty=true}}}
+ if(dirty){draw();dirty=false}requestAnimationFrame(frame)}
+addEventListener('resize',size);size();restore();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
