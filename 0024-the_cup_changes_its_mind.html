@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUTOART 0024 — The Cup Changes Its Mind</title>
+<style>
+:root{color-scheme:light;--cream:#f1dbba;--ink:#182f42;--red:#dc5c39;--blue:#246482}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--cream)}
+body{font-family:Georgia,'Times New Roman',serif;color:var(--ink);touch-action:none;user-select:none}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+header{position:fixed;left:clamp(24px,5.3vw,82px);top:clamp(23px,5vh,58px);z-index:2;pointer-events:none}
+.eyebrow{font:700 clamp(10px,.76vw,12px)/1.5 ui-monospace,Consolas,monospace;letter-spacing:.23em;color:#a84831;margin:0 0 clamp(12px,2vh,24px)}
+h1{font-weight:400;font-size:clamp(47px,6.4vw,96px);line-height:.85;letter-spacing:-.065em;margin:0}h1 span{display:block}h1 em{font-style:italic;color:#c74e34}
+.tag{font-size:clamp(13px,1.2vw,17px);line-height:1.4;margin-top:25px;color:#665c4d;max-width:300px}
+footer{position:fixed;bottom:clamp(17px,3.5vh,45px);left:clamp(24px,5.3vw,82px);right:clamp(20px,4.5vw,70px);z-index:2;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;pointer-events:none;font:700 clamp(9px,.77vw,12px)/1.65 ui-monospace,Consolas,monospace;letter-spacing:.065em;text-transform:uppercase}
+footer strong{color:#a84831}footer .count{color:#e4d398;text-align:right}
+#status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+#help{position:fixed;top:10px;right:10px;z-index:5;width:1px;height:1px;overflow:hidden;opacity:0}#help:focus-visible{opacity:1;width:auto;height:auto;padding:10px;border:2px solid #172b3b;background:#fff7e8;font:600 14px sans-serif}
+@media(max-width:650px){#scene{top:230px;height:450px}header{top:24px;left:22px}.eyebrow{margin-bottom:14px}h1{font-size:clamp(45px,12vw,69px)}.tag{max-width:185px;font-size:12px;margin-top:16px}footer{left:22px;right:20px;bottom:23px;display:block;font-size:10px}footer .count{display:none}}
+</style>
+</head>
+<body>
+<svg id="scene" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A huge vermilion teapot faces a restless cobalt cup on a saffron tabletop. When the pot pours, the cup escapes and a dark tea ring marks where it used to stand.">
+<defs>
+ <pattern id="paper" width="19" height="23" patternUnits="userSpaceOnUse"><path d="M3 5h1M13 15h2M7 21h1" stroke="#a16f52" opacity=".26" stroke-width=".7"/></pattern>
+ <pattern id="tablegrain" width="24" height="14" patternUnits="userSpaceOnUse"><path d="M0 8h13M18 4h6" stroke="#c2864b" opacity=".31" stroke-width="1"/></pattern>
+ <pattern id="potgrain" width="28" height="23" patternUnits="userSpaceOnUse"><path d="M3 7l6 -3M21 17l-4 3" stroke="#ffbd8b" stroke-width="1" opacity=".35"/></pattern>
+ <pattern id="cupgrain" width="17" height="18" patternUnits="userSpaceOnUse"><path d="M2 2l2 4M11 12l3 -2" stroke="#d1d6ad" opacity=".22" stroke-width="1"/></pattern>
+</defs>
+<rect width="1200" height="800" fill="#f1dbba"/><rect width="1200" height="800" fill="url(#paper)"/>
+<!-- Unequal broad colour-blocks make the scene a printed still-life, not a user-interface. -->
+<path d="M705 0H1200V510L932 466Z" fill="#e4b78d" opacity=".43"/>
+<path d="M0 677L1200 643V800H0Z" fill="#edbf59"/>
+<path d="M0 677L1200 643V800H0Z" fill="url(#tablegrain)"/>
+<path d="M0 679L1200 645" stroke="#183c54" stroke-width="7"/>
+<path d="M0 696L1200 662" stroke="#fff1be" stroke-width="2" opacity=".65"/>
+<path d="M768 116l333 -62M770 127l332 -62" stroke="#ad755b" stroke-width="1" opacity=".55"/>
+<circle cx="1055" cy="207" r="63" fill="none" stroke="#c75c3b" stroke-width="1.5" stroke-dasharray="3 11" opacity=".45"/>
+<path d="M1016 209h78M1055 170v78" stroke="#c75c3b" stroke-width="1" opacity=".3"/>
+<g id="puddle" fill="none" stroke="#734732" stroke-linecap="round"></g>
+<!-- Hand-constructed teapot, in nested enamel, shadow, reflection and line-work. -->
+<g id="pot" tabindex="0" role="button" aria-label="Teapot: pour tea">
+ <ellipse cx="419" cy="657" rx="253" ry="29" fill="#8c633c" opacity=".28"/>
+ <path d="M285 436C200 361 145 412 153 493C161 570 219 566 265 531" fill="none" stroke="#19334a" stroke-width="43"/>
+ <path d="M280 434C208 372 171 419 178 492C184 536 212 542 248 524" fill="none" stroke="#f4a87a" stroke-width="21"/>
+ <path d="M520 411C590 401 605 426 668 414L689 447C653 471 609 482 563 476" fill="#b94732" stroke="#1b3346" stroke-width="12" stroke-linejoin="round"/>
+ <path d="M596 431Q648 438 682 426L688 447Q651 468 611 457" fill="#f68e59"/>
+ <path d="M282 405Q270 436 266 493Q251 610 357 645Q452 686 534 606Q584 559 571 476Q564 429 541 405Z" fill="#dc5c39" stroke="#183348" stroke-width="13" stroke-linejoin="round"/>
+ <path d="M282 405Q270 436 266 493Q251 610 357 645Q452 686 534 606Q584 559 571 476Q564 429 541 405Z" fill="url(#potgrain)"/>
+ <path d="M316 440Q292 538 341 605" fill="none" stroke="#f7a270" stroke-width="15" stroke-linecap="round" opacity=".8"/>
+ <path d="M509 449Q562 528 512 593" fill="none" stroke="#942e2b" stroke-width="15" stroke-linecap="round" opacity=".58"/>
+ <path d="M291 404Q300 379 352 375H515Q551 381 552 407Q486 436 411 430Q333 430 291 404Z" fill="#ee9367" stroke="#17354b" stroke-width="12"/>
+ <path d="M345 370Q347 337 392 333H465Q509 333 512 371" fill="#2c5b6e" stroke="#183348" stroke-width="11"/>
+ <ellipse cx="428" cy="334" rx="51" ry="12" fill="#dd633e" stroke="#183348" stroke-width="10"/>
+ <path d="M428 308v26" stroke="#183348" stroke-width="17" stroke-linecap="round"/>
+ <ellipse cx="428" cy="302" rx="28" ry="10" fill="#e7bb73" stroke="#183348" stroke-width="8"/>
+ <path d="M350 480C384 456 441 459 475 484C496 500 495 544 470 570C440 602 365 597 339 562C316 529 323 497 350 480Z" fill="#f2a578" stroke="#173448" stroke-width="7"/>
+ <path d="M359 499C383 479 433 479 457 501" fill="none" stroke="#fff1c6" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+ <path d="M365 547Q426 572 469 533" fill="none" stroke="#d15f40" stroke-width="6"/>
+ <path d="M405 474v111" stroke="#dd7047" stroke-width="2" stroke-dasharray="4 7" opacity=".8"/>
+ <path d="M344 621Q423 658 519 603" fill="none" stroke="#a0362b" stroke-width="9" opacity=".7"/>
+</g>
+<!-- Three small steam glyphs have no external animation dependency. -->
+<g id="steam" fill="none" stroke="#faf3d7" stroke-linecap="round" stroke-width="7" opacity=".8">
+ <path d="M355 291C329 268 368 250 348 227C325 204 344 187 359 177"/>
+ <path d="M424 277C398 253 444 229 421 208C407 196 410 182 423 169"/>
+ <path d="M490 286C465 257 500 238 487 217C473 196 488 180 498 173"/>
+</g>
+<!-- The glass-blue cup deliberately opposes the warm, over-large teapot. -->
+<g id="cup" tabindex="0" role="button" aria-label="Cup: move the cup away">
+ <ellipse cx="900" cy="659" rx="126" ry="20" fill="#76533b" opacity=".28"/>
+ <path d="M974 502Q1074 472 1068 545Q1061 612 982 601" fill="none" stroke="#17344c" stroke-width="30"/>
+ <path d="M986 510Q1048 499 1043 551Q1039 586 992 579" fill="none" stroke="#afc9bf" stroke-width="13"/>
+ <path d="M788 490Q773 544 794 606Q810 651 881 654H931Q1002 641 1011 585L1009 493Z" fill="#246482" stroke="#15374b" stroke-width="11" stroke-linejoin="round"/>
+ <path d="M788 490Q773 544 794 606Q810 651 881 654H931Q1002 641 1011 585L1009 493Z" fill="url(#cupgrain)"/>
+ <path d="M821 520Q808 576 829 613" fill="none" stroke="#83b6ae" stroke-width="12" stroke-linecap="round" opacity=".74"/>
+ <path d="M969 529Q982 590 948 628" fill="none" stroke="#15465f" stroke-width="11" opacity=".9"/>
+ <ellipse cx="900" cy="490" rx="114" ry="25" fill="#17374b"/>
+ <ellipse cx="900" cy="485" rx="105" ry="16" fill="#f4d5a4"/>
+ <ellipse cx="900" cy="491" rx="92" ry="9" fill="#9c5437"/>
+ <path d="M847 583q52 28 104-1" fill="none" stroke="#c4d5c0" stroke-width="7" stroke-linecap="round"/>
+ <path d="M831 649Q901 666 968 647" fill="none" stroke="#132f44" stroke-width="6"/>
+</g>
+<!-- Spill is animated by the same bounded clock as the two utensils. -->
+<g id="pour" stroke="#84472f" fill="#82412f" stroke-linecap="round"></g>
+<g id="printmarks" fill="none" stroke="#aa5537" opacity=".7"><path d="M72 540h41M93 519v43M1082 345h41M1103 325v42" stroke-width="1.4"/><circle cx="93" cy="540" r="17" stroke-dasharray="2 5"/><circle cx="1103" cy="345" r="17" stroke-dasharray="2 5"/></g>
+<text x="1080" y="782" fill="#1b3544" font-family="monospace" font-size="12" letter-spacing="3" text-anchor="end">THE TABLE KEEPS THE EVIDENCE · 024</text>
+</svg>
+<header aria-hidden="true"><div class="eyebrow">AUTOART / 0024 &nbsp;·&nbsp; A MINOR SOCIAL ACCIDENT</div><h1><span>The Cup</span><span>Changes</span><span><em>Its Mind</em></span></h1><div class="tag">An invitation is not consent.<br>The table remembers every refusal.</div></header>
+<footer aria-hidden="true"><div><strong>CLICK THE POT TO POUR · DRAG THE CUP TO REPOSITION</strong><div>← → MOVE CUP &nbsp;·&nbsp; ENTER POUR &nbsp;·&nbsp; SPACE HOLD &nbsp;·&nbsp; R RESTORE</div></div><div class="count" id="counter">REFUSALS RECORDED / 00</div></footer>
+<div id="status" role="status" aria-live="polite">The cup is sitting beside a teapot.</div>
+<button id="help" aria-label="Instructions: Click or press Enter on the pot to pour. Drag the cup or use left and right arrow keys to move it. The cup will escape the pour and leave a tea stain. Space pauses or resumes; R restores the table.">Artwork instructions</button>
+<script>
+(()=>{'use strict';
+const svg=document.getElementById('scene'),pot=document.getElementById('pot'),cup=document.getElementById('cup'),steam=document.getElementById('steam'),pourLayer=document.getElementById('pour'),puddleLayer=document.getElementById('puddle'),counter=document.getElementById('counter'),status=document.getElementById('status');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let clock=0,last=0,paused=reduced,cupX=900,cupStart=900,cupTarget=900,escaping=false,pourStart=-100,stains=[],drag=null,dirty=true;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
+function point(e){let q=svg.createSVGPoint();q.x=e.clientX;q.y=e.clientY;return q.matrixTransform(svg.getScreenCTM().inverse())}
+function announce(t){status.textContent=t}
+function drop(x){stains.push(x);if(stains.length>9)stains.shift();counter.textContent='REFUSALS RECORDED / '+String(stains.length).padStart(2,'0');buildStains()}
+function buildStains(){puddleLayer.replaceChildren();stains.forEach((x,i)=>{const ns='http://www.w3.org/2000/svg';let e=document.createElementNS(ns,'ellipse');e.setAttribute('cx',x);e.setAttribute('cy',670-(x-900)*.029);e.setAttribute('rx',30+(i%3)*9);e.setAttribute('ry',8+(i%2)*3);e.setAttribute('stroke-width','4');e.setAttribute('opacity',String(.42+.05*(i%3)));e.setAttribute('stroke-dasharray',i%2?'3 5':'none');puddleLayer.append(e);let dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',x+19);dot.setAttribute('cy',660-(x-900)*.029);dot.setAttribute('r','2.5');dot.setAttribute('fill','#84472f');puddleLayer.append(dot)})}
+const drops=[];for(let i=0;i<22;i++){let e=document.createElementNS('http://www.w3.org/2000/svg','ellipse');e.setAttribute('rx',String(2.4+i%3));e.setAttribute('ry',String(4.5+i%3));e.setAttribute('opacity','0');pourLayer.append(e);drops.push(e)}
+function startPour(){if(clock-pourStart<1.7){announce('The pot is still finishing that offer.');return}cupStart=cupX;cupTarget=clamp(cupX+(cupX>930?-160:155),710,1072);escaping=true;pourStart=clock;dirty=true;announce('Tea is offered. The cup is already having second thoughts.')}
+function nudge(amount){cupX=clamp(cupX+amount,720,1075);cupTarget=cupX;escaping=false;dirty=true;announce('The cup chooses a different place.')}
+function setCup(x){cupX=clamp(x,720,1075);cupTarget=cupX;escaping=false;dirty=true;announce('The cup has been moved.')}
+function paint(){let age=clock-pourStart;
+ if(escaping){let f=smooth((age-.17)/.82);cupX=cupStart+(cupTarget-cupStart)*f;if(f>=1){escaping=false}}
+ pot.setAttribute('transform',`rotate(${age>=0&&age<1.4?(-12*Math.sin(Math.PI*clamp(age/1.4,0,1))).toFixed(3):0} 422 515)`);
+ cup.setAttribute('transform',`translate(${(cupX-900).toFixed(2)} 0)`);
+ steam.setAttribute('transform',`translate(0 ${(Math.sin(clock*1.4)*6).toFixed(2)})`);
+ drops.forEach((e,i)=>{let u=(age-.2)/1.15-i*.029;let visible=u>0&&u<1&&age<1.7;if(!visible){e.setAttribute('opacity','0');return}let t=u, x=685+(cupStart-685)*t, y=435+75*t+158*t*t;e.setAttribute('cx',x.toFixed(1));e.setAttribute('cy',y.toFixed(1));e.setAttribute('transform',`rotate(${-25+35*t} ${x.toFixed(1)} ${y.toFixed(1)})`);e.setAttribute('opacity',String(Math.min(1,Math.sin(Math.PI*t)*1.8)))})
+ if(age>=1.64&&age<1.64+.08&&!paint.stamped){drop(cupStart);paint.stamped=true;announce('The cup has escaped. The table has one more ring.')}if(age>=1.73)paint.stamped=false;
+}
+function step(stamp){if(!last)last=stamp;let dt=Math.min(50,Math.max(0,stamp-last))/1000;last=stamp;if(!paused)clock+=dt;if(!paused||dirty){paint();dirty=false}requestAnimationFrame(step)}
+function reset(){clock=0;last=0;cupX=900;cupStart=900;cupTarget=900;escaping=false;pourStart=-100;stains=[];buildStains();counter.textContent='REFUSALS RECORDED / 00';paint.stamped=false;paused=reduced;dirty=true;announce('The table is clean; the offer has not yet been made.')}
+pot.addEventListener('pointerdown',e=>{e.preventDefault();startPour()});cup.addEventListener('pointerdown',e=>{e.preventDefault();drag={id:e.pointerId,dx:point(e).x-cupX};cup.setPointerCapture(e.pointerId);announce('The cup is in your hand.')});cup.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;setCup(point(e).x-drag.dx)});const stop=e=>{if(drag&&e.pointerId===drag.id)drag=null};cup.addEventListener('pointerup',stop);cup.addEventListener('pointercancel',stop);
+window.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey)return;let k=e.key;if(['ArrowLeft','ArrowRight','Enter',' ','Spacebar','r','R'].includes(k))e.preventDefault();if(k==='ArrowLeft')nudge(-45);else if(k==='ArrowRight')nudge(45);else if(k==='Enter')startPour();else if(k===' '||k==='Spacebar'){paused=!paused;dirty=true;announce(paused?'The table is holding its breath.':'The invitation resumes.')}else if(k==='r'||k==='R')reset()});
+document.getElementById('help').addEventListener('click',()=>announce(document.getElementById('help').getAttribute('aria-label')));
+function responsive(){svg.setAttribute('preserveAspectRatio',innerWidth<=650?'xMidYMid meet':'xMidYMid slice');dirty=true}window.addEventListener('resize',responsive);responsive();requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>
