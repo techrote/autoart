@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>AUTOART 0023 — The City Misplaces Its Sunrise</title>
+<style>
+:root{--chalk:#f2d5b4;--ink:#11182b;--ochre:#eeb267}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#11182b}
+body{color:var(--chalk);font-family:Georgia,'Times New Roman',serif;touch-action:manipulation;user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+header{pointer-events:none;position:fixed;left:clamp(26px,5.7vw,94px);top:clamp(24px,5.2vh,70px);z-index:2;text-shadow:0 2px 2px #12192b50}
+.eyebrow{display:block;font:700 clamp(9px,.76vw,12px)/1.4 ui-monospace,Consolas,monospace;letter-spacing:.23em;color:#d78d75;margin-bottom:clamp(14px,3.1vh,33px)}
+h1{font-size:clamp(45px,6.3vw,101px);font-weight:400;line-height:.86;letter-spacing:-.055em;margin:0}
+h1 em{font-weight:400;font-style:italic;color:#f1a65e}h1 span{display:block}
+.sub{margin-top:clamp(16px,2.7vh,34px);font:400 clamp(12px,1vw,16px)/1.48 Georgia,serif;color:#dfb8a4;max-width:290px}
+.instructions{position:fixed;bottom:clamp(22px,3.9vh,55px);left:clamp(25px,5.7vw,94px);z-index:3;max-width:470px;pointer-events:none;font:700 clamp(9px,.72vw,11px)/1.8 ui-monospace,Consolas,monospace;letter-spacing:.075em;color:#edd0a6;text-transform:uppercase}
+.instructions strong{color:#fff0d3}
+.serial{pointer-events:none;position:fixed;right:clamp(18px,3.5vw,53px);bottom:clamp(20px,3.7vh,52px);z-index:3;font:600 clamp(9px,.72vw,12px)/1.5 ui-monospace,Consolas,monospace;letter-spacing:.12em;text-align:right;color:#e9b695}
+.status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+button{position:absolute;right:1rem;top:1rem;z-index:4;opacity:0;width:1px;height:1px;overflow:hidden}
+button:focus-visible{opacity:1;width:auto;height:auto;background:#f8dbb0;color:#151b2f;border:2px solid #fff;padding:.6rem 1rem;font:600 12px ui-monospace,monospace}
+@media(max-width:700px){header{top:25px;left:24px}.eyebrow{margin-bottom:14px}h1{font-size:clamp(42px,11vw,72px)}.sub{font-size:12px;max-width:230px}.instructions{max-width:230px;left:23px;bottom:44px;font-size:9px}.serial{right:22px;bottom:14px;font-size:9px}}
+</style>
+</head>
+<body>
+<canvas id="city" role="img" aria-label="An engraved nocturnal city stands immobile under an enormous misplaced apricot sun. Scattered windows wake in unrelated rhythms. Choose a building to give it a false dawn."></canvas>
+<header aria-hidden="true"><span class="eyebrow">AUTOART / 0023 &nbsp;—&nbsp; AN INACCURATE MORNING</span><h1><span>The City</span><span>Misplaces</span><span><em>Its Sunrise</em></span></h1><div class="sub">The buildings kept their addresses.<br>Morning arrived on the wrong floors.</div></header>
+<div class="instructions" aria-hidden="true"><strong>CLICK A FACADE TO SEND MORNING THE WRONG WAY</strong><div>← → CHOOSE BUILDING · ENTER SEND LIGHT</div><div>SPACE HOLD TIME · R RESTORE THE NIGHT</div></div>
+<div class="serial" aria-hidden="true">NO TWO WINDOWS KEEP THE SAME HOUR<br>THE SKY IS NOT IN CHARGE</div>
+<div id="status" class="status" role="status" aria-live="polite">The city waits in several hours at once.</div>
+<button id="help" type="button" aria-label="How to interact">Click a building to send light between its windows. Use left or right arrows to select a building, Enter to send dawn, Space to pause and R to reset.</button>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('city'),ctx=canvas.getContext('2d',{alpha:false});
+const status=document.getElementById('status');
+const W=1440,H=900,TAU=Math.PI*2;
+const colors={sky:'#11192a',pale:'#f6d4ad',rose:'#cb716b',amber:'#f4b46d',teal:'#559e9b',dark:'#152236'};
+const buildings=[
+ {x:-44,w:245,top:354,c:'#28374a',edge:'#3b5060',rows:6,cols:3,arch:false,seed:1},
+ {x:206,w:241,top:453,c:'#223349',edge:'#536276',rows:5,cols:4,arch:true,seed:2},
+ {x:465,w:166,top:554,c:'#18263b',edge:'#34445c',rows:4,cols:2,arch:false,seed:3},
+ {x:648,w:145,top:401,c:'#273448',edge:'#4b5365',rows:6,cols:2,arch:true,seed:4},
+ {x:815,w:224,top:494,c:'#202c41',edge:'#526076',rows:5,cols:4,arch:false,seed:5},
+ {x:1050,w:233,top:350,c:'#273147',edge:'#48566e',rows:7,cols:3,arch:true,seed:6},
+ {x:1280,w:202,top:468,c:'#1a283b',edge:'#405064',rows:5,cols:3,arch:false,seed:7}
+];
+const windows=[];let sparks=[];let now=0,last=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;let focus=-1;let pointer=null;let vw=0,vh=0,scale=1,ox=0,oy=0;let drawCount=0,dirty=true;
+function hash(n){let x=n|0;x=Math.imul(x^x>>>16,0x7feb352d);x=Math.imul(x^x>>>15,0x846ca68b);return ((x^x>>>16)>>>0)/4294967296;}
+for(let b=0;b<buildings.length;b++){
+ const B=buildings[b];let lower=770;let avail=lower-B.top-64;
+ for(let r=0;r<B.rows;r++)for(let c=0;c<B.cols;c++){
+  if((b===2&&r===0&&c===1)||(b===5&&r===3&&c===1))continue;
+  const x=B.x+(c+.5)*B.w/B.cols, y=B.top+56+(r+.5)*avail/B.rows;
+  windows.push({b,r,c,x,y,w:Math.min(29,B.w/B.cols*.38),h:Math.min(41,avail/B.rows*.47),phase:hash(b*31+r*17+c*43)*TAU,kind:hash(b*101+r*23+c*71)>0.77?'blind':hash(b*11+c*13+r*73)>.62?'person':'clear'});
+ }
+}
+const grain=Array.from({length:650},(_,i)=>({x:hash(i*31+15)*W,y:hash(i*17+55)*H,sz:.4+hash(i*11+71)*1.05,a:.025+hash(i*27+19)*.08}));
+function resize(){vw=innerWidth;vh=innerHeight;let dpr=Math.min(devicePixelRatio||1,1.75);canvas.width=Math.max(1,Math.round(vw*dpr));canvas.height=Math.max(1,Math.round(vh*dpr));scale=Math.max(vw/W,vh/H);ox=(vw-W*scale)/2;oy=(vh-H*scale)/2;ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*ox,dpr*oy);dirty=true;}
+function pos(e){return {x:(e.clientX-ox)/scale,y:(e.clientY-oy)/scale};}
+function line(x,y,x2,y2,color,width=1){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.lineWidth=width;ctx.strokeStyle=color;ctx.stroke();}
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
+function ellipse(x,y,rx,ry,color){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fillStyle=color;ctx.fill();}
+function background(t){
+ let grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#111729');grad.addColorStop(.52,'#252a3c');grad.addColorStop(.84,'#61434c');grad.addColorStop(1,'#995b56');rect(0,0,W,H,grad);
+ // An immense off-centre disk. Its rise is subtly wrong: it drifts DOWN as window-light climbs.
+ const sy=341+Math.sin(t*.14)*10+t%100*.16;const sx=1026+Math.sin(t*.09)*8;
+ let halo=ctx.createRadialGradient(sx,sy,90,sx,sy,470);halo.addColorStop(0,'#e9a36b88');halo.addColorStop(.45,'#bf67633f');halo.addColorStop(1,'#aa516400');ctx.fillStyle=halo;ctx.fillRect(465,-120,975,920);
+ ellipse(sx,sy,221,221,'#cd7465');ellipse(sx-8,sy-5,207,207,'#eaa16f');
+ ctx.save();ctx.beginPath();ctx.ellipse(sx-8,sy-5,207,207,0,0,TAU);ctx.clip();
+ for(let k=0;k<55;k++){let yy=sy-191+k*7.7;line(sx-280,yy,sx+280,yy,k%4===0?'#fff2c524':'#8c3e4e28',k%5===0?2:1);}
+ for(let k=0;k<70;k++){let px=sx-199+hash(k*2+205)*401,py=sy-180+hash(k*17+59)*364;ellipse(px,py,hash(k+7)*1.7+.4,.6,'#8c4b5066')}
+ ctx.restore();
+ // Printed orbital cuts and stray survey marks, thinner than any facade detail.
+ for(let j=0;j<5;j++){ctx.beginPath();ctx.ellipse(sx,sy,231+j*29,231+j*29,0,Math.PI*1.10,Math.PI*1.95);ctx.strokeStyle=`rgba(240,171,129,${.15-j*.021})`;ctx.lineWidth=1;ctx.stroke();}
+ for(let i=0;i<24;i++){let x=hash(i*87+43)*W,y=hash(i*19+97)*650;if(x<425&&y<345)continue;line(x-3,y,x+3,y,'#dfbdad55');line(x,y-3,x,y+3,'#dfbdad55')}
+}
+function facade(B,idx,t){
+ const bottom=H+90;
+ // Deep offset relief and engraved vertical lift line.
+ rect(B.x-8,B.top+15,B.w+17,bottom-B.top,'#0b1527');rect(B.x,B.top,B.w,bottom-B.top,B.c);
+ rect(B.x+6,B.top+9,5,bottom-B.top,'#be7c7655');rect(B.x+B.w-9,B.top+8,5,bottom-B.top,'#090f2055');
+ rect(B.x-5,B.top-11,B.w+10,10,'#0b1729');rect(B.x-17,B.top-13,B.w+34,3,B.edge);
+ // Cornice changes per facade rather than identical skyline profiles.
+ if(idx===1||idx===5){for(let k=0;k<Math.floor(B.w/18);k++)rect(B.x+7+k*18,B.top-25,12,13,'#1e2d43');}
+ if(idx===3){rect(B.x+58,B.top-64,25,52,'#2b3749');line(B.x+70,B.top-90,B.x+70,B.top-65,'#c37c65',3);}
+ if(idx===0||idx===6){rect(B.x+25,B.top-32,7,22,'#3f5360');rect(B.x+42,B.top-47,3,37,'#dd8c7066');}
+ // Vertical brick seams; tight, imperfect print registration.
+ for(let r=0;r<24;r++){
+ let y=B.top+27+r*25;
+ line(B.x+17,y,B.x+B.w-16,y,r%3===0?'#77839926':'#af9b9420',1);
+ for(let c=0;c<Math.floor(B.w/49);c++){
+  let x=B.x+21+c*49+(r%2)*23;
+  line(x,y-22,x,y-3,'#8190a025',1);
+ }
+ }
+ // Balustrade / fire escape / sign language varies from tower to tower.
+ if(idx===1){rect(B.x+38,B.top+22,B.w-76,19,'#68718424');for(let k=0;k<8;k++)line(B.x+38+k*21,B.top+23,B.x+38+k*21,B.top+41,'#d49a7750')}
+ if(idx===4){for(let r=0;r<4;r++){let y=B.top+102+r*86;rect(B.x+B.w-25,y,37,6,'#65758a');line(B.x+B.w-9,y+7,B.x+B.w-9,y+72,'#b18a7350');}}
+ if(idx===5){rect(B.x+83,B.top+20,69,5,'#d3886c77');line(B.x+83,B.top+42,B.x+151,B.top+42,'#d3886c77')}
+ // Long-lived quiet light on the skyline's rear edges.
+ line(B.x+13,B.top+3,B.x+B.w-12,B.top+3,'#f6bda247',1.5);
+}
+function windowLight(w,t){
+ // Internal clocks do not share an origin. The pulse reaches a floor by travelling upward.
+ let daily=(Math.sin(t*.16-w.r*.36+w.phase*1.8)+.32*Math.cos(t*.27+w.c*.8+w.phase));
+ let intensity=.22+.3*(daily+1)/2;
+ if((Math.floor(w.phase*9)+w.r)%5===0) intensity*=.1;
+ for(const s of sparks){if(s.b!==w.b)continue;let age=t-s.start;if(age<0||age>11)continue;
+   let vertical=s.y-w.y;if(vertical < -20)continue;
+   let travel=vertical*.019+Math.abs(w.x-s.x)*.005;
+   let wave=age-travel;let gain=Math.exp(-Math.pow(wave/.77,2))*1.65;
+   intensity+=gain+Math.exp(-Math.max(age-travel,0)*.7)*.10;
+ }
+ return Math.max(.035,Math.min(1,intensity));
+}
+function drawWindow(w,t){
+ const B=buildings[w.b],x=w.x-w.w/2,y=w.y-w.h/2,I=windowLight(w,t);
+ let lit=I>.31, arched=B.arch&&((w.c+w.r)%2===0);
+ ctx.save();
+ if(I>.43){let g=ctx.createRadialGradient(w.x,w.y,1,w.x,w.y,53);g.addColorStop(0,`rgba(245,164,106,${Math.min(.27,(I-.43)*.39)})`);g.addColorStop(1,'rgba(245,164,106,0)');ctx.fillStyle=g;ctx.fillRect(w.x-53,w.y-53,106,106);}ctx.fillStyle='#091424';ctx.beginPath();ctx.moveTo(x-4,y+w.h+5);ctx.lineTo(x-4,y+(arched?8:0));if(arched){ctx.quadraticCurveTo(x+w.w/2,y-15,x+w.w+4,y+8);}else{ctx.lineTo(x+w.w+4,y-4);}ctx.lineTo(x+w.w+4,y+w.h+5);ctx.closePath();ctx.fill();
+ let glass=ctx.createLinearGradient(x,y,x+w.w,y+w.h);glass.addColorStop(0,lit?`rgba(255,202,130,${.38+I*.58})`:'#28364a');glass.addColorStop(1,lit?`rgba(235,113,79,${.34+I*.48})`:'#192c43');rect(x,y,w.w,w.h,glass);
+ if(w.kind==='blind'){for(let k=1;k<5;k++)line(x+2,y+k*w.h/5,x+w.w-2,y+k*w.h/5,'#17263cc4',2.4)}
+ if(w.kind==='person'&&lit){let px=x+w.w*(.34+hash(w.c+w.r*13+w.b)*.35);ellipse(px,y+w.h*.42,2.3,3,'#3a3341dd');rect(px-2.3,y+w.h*.5,4.6,w.h*.37,'#352f3cc9');}
+ if(w.kind==='clear'&&lit&&w.c%2===0){line(x+w.w*.47,y+2,x+w.w*.47,y+w.h-3,'#334155a6',1.1)}
+ line(x+w.w/2,y+1,x+w.w/2,y+w.h-1,'#111c30b8',1.3);
+ rect(x-5,y+w.h-1,w.w+10,4,'#5d60699f');rect(x+w.w+1,y,w.w*.1,w.h,'#0a1528a0');
+ // A coloured speck of reflection makes a bright window feel occupied rather than a pixel switch.
+ if(lit&&I>.65)rect(x+4,y+4,2,Math.min(11,w.h*.26),`rgba(255,242,189,${I*.65})`);
+ ctx.restore();
+}
+function foreground(t){
+ // A continuous dark street band keeps the architecture grounded and silhouettes distinct.
+ rect(0,796,W,104,'#10192a');line(0,795,W,795,'#d381746c',2);
+ for(let k=0;k<16;k++){let x=k*97+13;rect(x,803,2,97,'#70819416');if(k%3===0)line(x-16,837,x+22,837,'#ce8b7270',1)}
+ // Telephone cable crossing the sky, slightly unlevel, answers neither geometry nor the sun.
+ ctx.beginPath();ctx.moveTo(445,373);ctx.bezierCurveTo(720,400,1107,434,1490,386);ctx.lineWidth=2;ctx.strokeStyle='#111927';ctx.stroke();
+ for(let x=580;x<1480;x+=160){let y=386+22*Math.sin((x-445)/900*Math.PI);line(x,y,x,y+23,'#20233b',1.1)}
+ // Tiny street lamps; their halos do not agree with the direction of daylight.
+ for(const x of [172,603,1031,1355]){line(x,756,x,799,'#101726',5);line(x-14,756,x+14,756,'#181b2c',4);ellipse(x,758,10,3,'#eb9f739c')}
+ // Vertical imperfect print grain over everything.
+ for(const g of grain){rect(g.x,g.y,g.sz,g.sz,`rgba(255,216,177,${g.a})`)}
+}
+function draw(t){
+ ctx.setTransform(canvas.width/vw*scale,0,0,canvas.height/vh*scale,canvas.width/vw*ox,canvas.height/vh*oy);
+ background(t);
+ for(let i=0;i<buildings.length;i++)facade(buildings[i],i,t);
+ for(const w of windows)drawWindow(w,t);
+ // A selection is held in the city's architecture, not a floating toolbar.
+ if(focus>=0){let B=buildings[focus];ctx.strokeStyle='#f5c3899a';ctx.lineWidth=2;ctx.setLineDash([8,6]);ctx.strokeRect(B.x+5,B.top+4,B.w-10,786-B.top);ctx.setLineDash([]);}
+ foreground(t);
+}
+function choose(b){focus=(b+buildings.length)%buildings.length;dirty=true;status.textContent=`Building ${focus+1} selected. Press Enter to send morning to its windows.`;}
+function send(b,x,y){if(b<0)return;const B=buildings[b];sparks.push({b,x:x??(B.x+B.w/2),y:y??Math.max(B.top+85,630),start:now});if(sparks.length>5)sparks.shift();focus=b;dirty=true;status.textContent=`Morning misplaced in building ${b+1}; it travels upward between the windows.`;}
+canvas.addEventListener('pointerdown',e=>{let p=pos(e);let b=buildings.findIndex(B=>p.x>=B.x&&p.x<B.x+B.w&&p.y>=B.top&&p.y<=796);if(b<0){status.textContent='The sky keeps its own time. Choose a facade below.';return;}send(b,p.x,p.y);});
+window.addEventListener('keydown',e=>{if(e.altKey||e.metaKey||e.ctrlKey)return;let k=e.key;if(['ArrowRight','ArrowLeft','Enter',' ','Spacebar','r','R'].includes(k)){e.preventDefault();}if(k==='ArrowRight')choose((focus<0?0:focus)+1);else if(k==='ArrowLeft')choose((focus<0?0:focus)-1);else if(k==='Enter')send(focus<0?3:focus);else if(k===' '||k==='Spacebar'){paused=!paused;dirty=true;status.textContent=paused?'The city holds its many hours.':'The clocks disagree again.';}else if(k==='r'||k==='R'){sparks=[];now=0;focus=-1;paused=matchMedia('(prefers-reduced-motion: reduce)').matches;dirty=true;status.textContent='The night is restored.';}});
+document.getElementById('help').addEventListener('click',()=>status.textContent=document.getElementById('help').getAttribute('aria-label'));
+window.addEventListener('resize',resize);resize();
+function frame(stamp){if(!last)last=stamp;let delta=Math.min(50,Math.max(0,stamp-last))/1000;last=stamp;if(!paused)now+=delta;if(!paused||dirty){sparks=sparks.filter(s=>now-s.start<12);draw(now);drawCount++;dirty=false;}requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
