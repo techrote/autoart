@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUTOART 0035 — The Sea Has a Seam</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0a1b35;color:#f4d8af}body{font-family:Georgia,'Times New Roman',serif}
+main{position:relative;height:100svh;min-height:600px;overflow:hidden;background:#0a1b35}
+svg{display:block;width:100%;height:100%;touch-action:none;outline:none;cursor:ns-resize}
+svg:focus-visible{outline:4px solid #f1be82;outline-offset:-7px}
+.top{position:absolute;left:clamp(18px,4vw,64px);top:clamp(24px,4vw,56px);pointer-events:none;max-width:300px;text-shadow:0 2px 12px #06172fc0}
+.edition{display:block;font:700 11px/1.4 ui-monospace,Consolas,monospace;letter-spacing:.22em;color:#b0d9d7}
+h1{font:normal clamp(36px,5.1vw,76px)/.94 Georgia,serif;letter-spacing:-.055em;margin:22px 0 14px;max-width:280px;color:#f4d8af}
+.top p{font:12px/1.55 ui-monospace,Consolas,monospace;letter-spacing:.04em;max-width:225px;color:#bdd9d8}
+.foot{position:absolute;bottom:clamp(13px,2.8vw,38px);left:clamp(14px,4vw,64px);right:clamp(14px,4vw,64px);display:flex;align-items:end;justify-content:space-between;gap:15px;pointer-events:none}
+.foot>*{pointer-events:auto}.state{font:700 11px/1.55 ui-monospace,Consolas,monospace;letter-spacing:.095em;color:#e5dcc3;background:#0a2443df;padding:7px 9px;margin-left:-9px;max-width:340px}
+.foot .hint{display:block;font:400 10px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.025em;color:#a9d0d1;margin-top:5px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:end}
+button{font:700 11px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.13em;min-height:44px;border:1px solid #efb97b;background:#092949e8;color:#ffdcaa;padding:11px 14px;cursor:pointer}
+button:hover,button:focus-visible{background:#edb47c;color:#12253b;outline:2px solid #f7d7a6;outline-offset:2px}
+@media(max-width:690px){main{min-height:600px}.top{left:14px;top:16px;max-width:124px}.edition{font-size:8px;letter-spacing:.07em;max-width:104px}h1{font-size:29px;line-height:1.04;margin:11px 0}.top p{display:none}.foot{left:12px;right:12px;bottom:12px;align-items:end}.state{font-size:9px;max-width:164px;letter-spacing:.02em}.foot .hint{font-size:9px}.controls{max-width:170px;gap:6px}button{font-size:9px;min-height:43px;padding:10px}}
+@media(prefers-reduced-motion:reduce){svg{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+<svg id="work" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" tabindex="0" role="group" aria-label="An enormous fabric ocean with a brass zipper. Drag the pull down to reveal a second sky under the sea; drag up to conceal it. Arrow keys move the zipper.">
+<defs>
+ <linearGradient id="outer" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071a38"/><stop offset=".48" stop-color="#155083"/><stop offset="1" stop-color="#082e5e"/></linearGradient>
+ <linearGradient id="inner" x1="0" y1="0" x2=".35" y2="1"><stop stop-color="#151135"/><stop offset=".5" stop-color="#3c2359"/><stop offset="1" stop-color="#6e365b"/></linearGradient>
+ <radialGradient id="moon"><stop stop-color="#fff4c9"/><stop offset=".52" stop-color="#ffd69e"/><stop offset=".96" stop-color="#e59e91"/><stop offset="1" stop-color="#ad6885"/></radialGradient>
+ <linearGradient id="fold" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#091e45" stop-opacity=".8"/><stop offset=".4" stop-color="#1f77a3" stop-opacity=".45"/><stop offset="1" stop-color="#99cfbe" stop-opacity=".1"/></linearGradient>
+ <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0b1"/><stop offset=".35" stop-color="#edb96e"/><stop offset=".7" stop-color="#c17851"/><stop offset="1" stop-color="#6d4755"/></linearGradient>
+ <pattern id="weave" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M-2 3L19 24M-2 12L12 26" stroke="#9dd5cf" stroke-width=".65" opacity=".13"/><path d="M8-4L21 9" stroke="#061630" stroke-width=".7" opacity=".19"/></pattern>
+ <mask id="sea-mask" maskUnits="userSpaceOnUse" x="-20" y="-20" width="1240" height="840"><rect x="-20" y="-20" width="1240" height="840" fill="white"/><path id="aperture" fill="black"/></mask>
+ <clipPath id="window"><path id="sky-aperture"/></clipPath>
+</defs>
+<!-- The reverse side: an astronomical space that is not geographically below any ocean. -->
+<rect width="1200" height="800" fill="url(#inner)"/>
+<g id="starfield"></g>
+<g clip-path="url(#window)">
+ <circle cx="600" cy="312" r="170" fill="url(#moon)" opacity=".9"/>
+ <path d="M465 274C510 234 544 241 568 265M558 420Q632 379 702 404" fill="none" stroke="#fff0d0" stroke-width="2" opacity=".24"/>
+ <path d="M0 635C205 567 372 710 578 607C755 514 973 663 1200 566V800H0Z" fill="#160e37" opacity=".75"/>
+ <path d="M0 700Q270 640 434 695T850 680T1200 685" fill="none" stroke="#d9a4a3" stroke-width="2" opacity=".3"/>
+</g>
+<!-- Water is drawn as a woven cover, then removed solely by the zipper opening mask. -->
+<g mask="url(#sea-mask)">
+ <rect width="1200" height="800" fill="url(#outer)"/>
+ <path d="M0 96C160 140 225 79 369 116S645 177 804 132S1086 92 1200 133M0 290C142 234 263 340 430 301S749 253 914 318S1075 260 1200 293M0 604C187 541 289 666 461 595S779 556 949 609S1070 563 1200 589" fill="none" stroke="#7ac2c6" stroke-width="37" opacity=".085"/>
+ <rect width="1200" height="800" fill="url(#weave)"/>
+ <g id="ripples"></g>
+ <path d="M0 732C178 695 274 773 438 727S751 760 928 710S1108 746 1200 718" fill="none" stroke="#8bccd0" stroke-width="5" opacity=".28"/>
+</g>
+<g id="seam" aria-hidden="true">
+ <path id="fold-left" fill="url(#fold)" opacity=".75"/>
+ <path id="fold-right" fill="url(#fold)" opacity=".65"/>
+ <path id="edge-left-dark" fill="none" stroke="#092946" stroke-width="19" stroke-linecap="round"/>
+ <path id="edge-right-dark" fill="none" stroke="#092946" stroke-width="19" stroke-linecap="round"/>
+ <path id="edge-left" fill="none" stroke="#7eb8c1" stroke-width="6" stroke-linecap="round"/>
+ <path id="edge-right" fill="none" stroke="#83cbd0" stroke-width="6" stroke-linecap="round"/>
+ <path id="stitch-left" fill="none" stroke="#f7c18c" stroke-width="1.8" stroke-dasharray="3 12"/>
+ <path id="stitch-right" fill="none" stroke="#f7c18c" stroke-width="1.8" stroke-dasharray="3 12"/>
+ <path id="closed-track" fill="none" stroke="#081b31" stroke-width="22"/>
+ <path id="closed-gold" fill="none" stroke="#ca925c" stroke-width="5"/>
+ <g id="teeth"></g>
+</g>
+<g id="pull" aria-hidden="true">
+ <path d="M-29-26Q-43-12-38 5L-19 25Q0 34 19 25L38 5Q43-12 29-26L15-35H-15Z" fill="#51374a" opacity=".7" transform="translate(5 8)"/>
+ <path d="M-29-26Q-43-12-38 5L-19 25Q0 34 19 25L38 5Q43-12 29-26L15-35H-15Z" fill="url(#brass)" stroke="#fff0b8" stroke-width="3"/>
+ <path d="M-17-21H17L20 3L0 16L-20 3Z" fill="#8a5962" stroke="#f2d29d" stroke-width="2"/>
+ <path d="M-9-21L0-5L9-21" fill="none" stroke="#ffd8a1" stroke-width="3"/>
+ <path d="M0 23V41" fill="none" stroke="#e0a96c" stroke-width="11" stroke-linecap="round"/>
+ <ellipse cx="0" cy="64" rx="26" ry="29" fill="#241a3f" stroke="url(#brass)" stroke-width="11"/>
+ <ellipse cx="0" cy="64" rx="15" ry="18" fill="none" stroke="#f7d89c" stroke-width="2" opacity=".9"/>
+ <path d="M-14-10H14" stroke="#ffd99e" stroke-width="2"/>
+</g>
+<g fill="#badfda" font-family="ui-monospace,Consolas,monospace" font-size="11" letter-spacing="2" opacity=".75">
+ <text x="58" y="728">PLATE 35 / A REMOVABLE HORIZON</text>
+ <text x="932" y="96">DEPTH IS A FASTENER</text>
+</g>
+</svg>
+<div class="top"><span class="edition">AUTOART / 0035&nbsp; · &nbsp;A REVERSIBLE CUT</span><h1>The Sea<br>Has a<br>Seam</h1><p>Something is stitched beneath the water. Pull the bright clasp.</p></div>
+<div class="foot"><div class="state" id="status" role="status" aria-live="polite">THE OPENING IS NOT A HORIZON<span class="hint">Drag the brass clasp · ↑↓ / ←→ · O open · C close · R return</span></div><div class="controls"><button type="button" id="open">OPEN THE SEA</button><button type="button" id="close">DRAW IT SHUT</button><button type="button" id="restore">RESTORE</button></div></div>
+</main>
+<script>
+(()=>{'use strict';
+const NS='http://www.w3.org/2000/svg';const $=id=>document.getElementById(id);const svg=$('work'),teeth=$('teeth'),starfield=$('starfield'),ripples=$('ripples');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;let amount=.34,target=.34,dragging=false,frame=0;
+let seed=0x35a0f32;function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
+function el(name,attrs,parent){const node=document.createElementNS(NS,name);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,String(v));parent.appendChild(node);return node}
+for(let i=0;i<120;i++){const x=45+rand()*1110,y=20+rand()*754,r=.65+rand()*1.65;el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:r.toFixed(1),fill:i%7?'#e9b4b5':'#fff2be',opacity:(.2+rand()*.7).toFixed(2)},starfield);if(i%13===0){el('path',{d:`M${(x-7).toFixed(1)} ${y.toFixed(1)}h14M${x.toFixed(1)} ${(y-7).toFixed(1)}v14`,stroke:'#ffe9c4','stroke-width':1,opacity:.36},starfield)}}
+for(let j=0;j<490;j++){const x=rand()*1200,y=rand()*800,len=10+rand()*68;const d=`M${x.toFixed(1)} ${y.toFixed(1)}q${(len*.4).toFixed(1)} ${(-7+rand()*13).toFixed(1)} ${len.toFixed(1)} ${(-2+rand()*4).toFixed(1)}`;el('path',{d,fill:'none',stroke:j%11===0?'#f9e5bc':j%3?'#9adddb':'#1d9bb9','stroke-width':(.7+rand()*1.5).toFixed(1),opacity:(.13+rand()*.35).toFixed(2)},ripples)}
+function geometry(t){const y=192+t*452;const spread=18+t*183;const xl=600-spread,xr=600+spread;const left=`M${xl} 0C${xl-17} 96 ${600-spread*.72} ${Math.min(y-58, y*.72)} 600 ${y}`;const right=`M${xr} 0C${xr+17} 96 ${600+spread*.72} ${Math.min(y-58,y*.72)} 600 ${y}`;const opening=`M${xl} -10L${xr} -10C${xr+17} 96 ${600+spread*.72} ${Math.min(y-58,y*.72)} 600 ${y}C${600-spread*.72} ${Math.min(y-58,y*.72)} ${xl-17} 96 ${xl} -10Z`;return {y,spread,xl,xr,left,right,opening}}
+function draw(){const g=geometry(amount);$('aperture').setAttribute('d',g.opening);$('sky-aperture').setAttribute('d',g.opening);for(const [id,d] of [['edge-left-dark',g.left],['edge-right-dark',g.right],['edge-left',g.left],['edge-right',g.right],['stitch-left',g.left],['stitch-right',g.right]])$(id).setAttribute('d',d);
+$('fold-left').setAttribute('d',`M${g.xl-40} 0L${g.xl} 0C${g.xl-17} 96 ${600-g.spread*.72} ${Math.min(g.y-58,g.y*.72)} 600 ${g.y}Q${600-g.spread*.5-36} ${g.y-100} ${g.xl-40} 0Z`);
+$('fold-right').setAttribute('d',`M${g.xr+40} 0L${g.xr} 0C${g.xr+17} 96 ${600+g.spread*.72} ${Math.min(g.y-58,g.y*.72)} 600 ${g.y}Q${600+g.spread*.5+36} ${g.y-100} ${g.xr+40} 0Z`);
+$('closed-track').setAttribute('d',`M600 ${g.y}L600 820`);$('closed-gold').setAttribute('d',`M600 ${g.y+39}L600 820`);$('pull').setAttribute('transform',`translate(600 ${g.y})`);
+const n=Math.ceil((805-g.y)/20);while(teeth.children.length>n)teeth.lastChild.remove();while(teeth.children.length<n){el('path',{fill:'url(#brass)',stroke:'#f7d9a0','stroke-width':1.2},teeth)}for(let k=0;k<n;k++){const yy=g.y+38+k*20,off=k%2?2:-2;teeth.children[k].setAttribute('d',`M${581+off} ${yy}h${18-off}v8h${-18+off}ZM600 ${yy+9}h${18-off}v8h${-18+off}Z`)}
+}
+function announce(){const percent=Math.round(target*100);$('status').firstChild.textContent=percent<=2?'THE WATER IS FASTENED':percent>=98?'THE OTHER SKY IS EXPOSED':`THE SEAM IS ${percent}% OPEN`}
+function animate(){frame=0;const diff=target-amount;if(Math.abs(diff)<.001){amount=target;draw();return}amount+=diff*.19;draw();frame=requestAnimationFrame(animate)}
+function set(v){target=Math.max(0,Math.min(1,v));announce();if(reduced){amount=target;draw();return}if(!frame)frame=requestAnimationFrame(animate)}
+function point(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+function seek(e){const p=point(e);set((p.y-192)/452)}
+svg.addEventListener('pointerdown',e=>{const p=point(e);if(Math.abs(p.x-600)>225||p.y<110||p.y>790)return;dragging=true;svg.setPointerCapture(e.pointerId);seek(e)});
+svg.addEventListener('pointermove',e=>{if(dragging)seek(e)});for(const name of ['pointerup','pointercancel','lostpointercapture'])svg.addEventListener(name,()=>dragging=false);
+function reset(){set(.34)}
+function onKey(e){if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA'].includes(e.target.tagName))return;let action=true;if(e.key==='ArrowDown'||e.key==='ArrowRight')set(target+.09);else if(e.key==='ArrowUp'||e.key==='ArrowLeft')set(target-.09);else if(e.key.toLowerCase()==='o')set(1);else if(e.key.toLowerCase()==='c')set(0);else if(e.key.toLowerCase()==='r'||e.key==='Escape')reset();else action=false;if(action)e.preventDefault()}
+document.addEventListener('keydown',onKey);$('open').addEventListener('click',()=>set(1));$('close').addEventListener('click',()=>set(0));$('restore').addEventListener('click',reset);
+function layout(){svg.setAttribute('viewBox',innerWidth<691?'360 0 480 800':'0 0 1200 800')};window.addEventListener('resize',layout);layout();draw();
+})();
+</script>
+</body>
+</html>
