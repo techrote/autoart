@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>AUTOART 0031 — The Needle Misses by a Hair</title>
+<style>
+:root{--cloth:#07191c;--ink:#e9dfc5;--copper:#e9a35e;--dim:#b1aaa0}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--cloth);color:var(--ink)}
+body{font-family:Georgia,'Times New Roman',serif}
+main{display:grid;grid-template-columns:minmax(295px,32%) minmax(0,68%);min-height:100dvh;background:#07191c}
+aside{padding:clamp(28px,5vw,80px) clamp(22px,3.4vw,52px) 38px clamp(30px,5.8vw,86px);display:flex;flex-direction:column;z-index:1;min-height:690px;background:linear-gradient(110deg,#102429,#081c20 70%,#07191c)}
+.serial,.minor,.status,.help,button,.colophon{font:11px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.105em;text-transform:uppercase}
+.serial{color:#e6a76a}
+h1{font-size:clamp(52px,5.7vw,88px);line-height:.99;letter-spacing:-.068em;font-weight:normal;margin:clamp(44px,9vh,110px) 0 24px;max-width:430px}
+h1 em{font-weight:normal;color:#edaf74}
+.dek{font-size:clamp(17px,1.4vw,21px);line-height:1.47;color:#cbc8b9;margin:0;max-width:350px}
+.space{flex:1;min-height:45px}
+.smallrule{width:61px;height:1px;background:#ca8c55;margin-bottom:20px}
+.status{color:#edba80;min-height:36px;letter-spacing:.08em}
+.help{color:#b2b9af;margin:10px 0 20px;max-width:370px;letter-spacing:.045em}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{color:#f1dfc3;background:#153136;border:1px solid #6d7a70;padding:10px 13px;min-height:41px;cursor:pointer;letter-spacing:.055em}
+button:hover,button:focus-visible{background:#b8814f;color:#08191e;outline:2px solid #f1c38f;outline-offset:2px}
+button[aria-pressed=true]{background:#c28a54;color:#0b171c}
+.minor{color:#7f9997;margin-top:20px;letter-spacing:.08em}
+.stage{position:relative;min-height:690px;overflow:hidden;background:#08191d;touch-action:none}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.colophon{position:absolute;left:5%;top:26px;color:#b4ae95;opacity:.78;pointer-events:none;font-size:10px}
+.corner{position:absolute;right:5%;bottom:26px;text-align:right;color:#b5ab9b;opacity:.7;pointer-events:none;font:10px/1.6 ui-monospace,monospace;letter-spacing:.09em}
+@media(max-width:740px){main{display:block}aside{min-height:unset;padding:27px 24px 18px}h1{font-size:clamp(47px,11vw,77px);margin:19px 0 11px;max-width:590px}.dek{font-size:16px;max-width:600px}.space,.smallrule{display:none}.status{min-height:0;margin-top:17px}.help{margin:4px 0 10px;font-size:10px}.actions{gap:7px}button{padding:8px 10px;min-height:38px;font-size:10px}.minor{margin-top:10px;font-size:10px}.stage{height:min(110vw,640px);min-height:360px}.colophon{top:12px;font-size:9px}.corner{bottom:12px;font-size:9px}}
+@media(max-width:400px){h1{font-size:clamp(44px,11.7vw,56px)}.stage{height:111vw}.minor{font-size:9px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+<aside>
+  <div class="serial">AUTOART / 0031 · A STUDY OF ALMOST</div>
+  <h1>The Needle<br><em>Misses</em><br>by a Hair</h1>
+  <p class="dek">The eye is open. The thread can be brought closer. Closer is not through.</p>
+  <div class="space"></div><div class="smallrule"></div>
+  <div class="status" id="status" role="status" aria-live="polite">A THREAD / ONE UNFINISHED ARRIVAL</div>
+  <div class="help">Drag the copper end toward the eye · arrows guide it · T draw near · L let go · Space hold · R restore.</div>
+  <div class="actions">
+    <button type="button" id="near">DRAW NEAR</button>
+    <button type="button" id="loose">LET GO</button>
+    <button type="button" id="hold" aria-pressed="false">HOLD ∥</button>
+    <button type="button" id="reset">RESTORE ↺</button>
+  </div>
+  <div class="minor">A GAP TOO SMALL TO FILL · NO STITCH WILL BE MADE</div>
+</aside>
+<section class="stage" aria-label="A monumental steel sewing needle and a single copper thread on dark woven cloth">
+  <div class="colophon">STUDY / 31<br>ONE EYE · NO PASSAGE</div>
+  <canvas id="drawing" role="img" aria-label="A steel needle stands almost upright on dark green-blue cloth. An orange thread coils from the left and ends just outside the needle eye. Drag the thread end to pull it close, but it never crosses the opening."></canvas>
+  <div class="corner">FIG. 31 / UNSUCCESSFUL THREADING<br>ALL DISTANCES ARE PICTORIAL</div>
+</section>
+</main>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('drawing'),ctx=canvas.getContext('2d',{alpha:false}),status=document.getElementById('status'),holdBtn=document.getElementById('hold');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const W=930,H=820,eye={x:656,y:244},home={x:446,y:438};
+let width=1,height=1,dpr=1,scale=1,offX=0,offY=0,last=0,held=reduce,drag=false,dirty=true,tip={...home},goal={...home},v={x:0,y:0},wave=0,phase=0,gesture=0;
+const fuzz=Array.from({length:180},(_,i)=>{let n=Math.sin((i+2)*13.773)*43758.5453;return{x:(n-Math.floor(n))*W,y:((Math.sin(i*83.29)*21357.2)%1+1)%1*H,a:.08+(i%5)*.026}});
+function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
+function nearGuard(p){let x=clamp(p.x,195,800),y=clamp(p.y,100,680);let dx=x-eye.x,dy=y-eye.y,d=Math.hypot(dx,dy);if(d<31){let ax=dx/d||-1,ay=dy/d||.3;x=eye.x+ax*31;y=eye.y+ay*31}return{x,y}}
+function coords(e){let r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left-offX)/scale,y:(e.clientY-r.top-offY)/scale}}
+function updateSize(){let r=canvas.getBoundingClientRect();width=r.width;height=r.height;dpr=Math.min(window.devicePixelRatio||1,1.75);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);scale=Math.min(width/W,height/H)*1.03;offX=(width-W*scale)*.5;offY=(height-H*scale)*.5;dirty=true}
+function announce(s){status.textContent=s;holdBtn.textContent=held?'RESUME ▶':'HOLD ∥';holdBtn.setAttribute('aria-pressed',held?'true':'false')}
+function target(x,y,msg){goal=nearGuard({x,y});gesture++;wave=Math.min(28,wave+8);if(held){tip={...goal};v={x:0,y:0}}dirty=true;announce(msg||'THE THREAD / APPROACHING THE EYE')}
+function homeward(){target(home.x,home.y,'THE THREAD / RELEASED');}
+function reset(){tip={...home};goal={...home};v={x:0,y:0};wave=0;phase=0;gesture=0;held=reduce;drag=false;dirty=true;announce('A THREAD / ONE UNFINISHED ARRIVAL')}
+function toggle(){held=!held;v={x:0,y:0};dirty=true;announce(held?'TIME / HELD':'TIME / RESUMED')}
+function shadowLine(points,color,widthLine,blur=0){ctx.save();ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let p of points.slice(1))ctx.lineTo(p[0],p[1]);ctx.strokeStyle=color;ctx.lineWidth=widthLine;ctx.lineJoin='round';ctx.shadowColor='#020c0d';ctx.shadowBlur=blur;ctx.stroke();ctx.restore()}
+function drawNeedle(){ctx.save();ctx.translate(eye.x,eye.y);ctx.rotate(.12); // The eye is the only void in this rigid mass.
+  ctx.save();ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=30;ctx.shadowOffsetX=28;ctx.shadowOffsetY=13;
+  let steel=ctx.createLinearGradient(-25,0,27,0);steel.addColorStop(0,'#1c3038');steel.addColorStop(.13,'#718b8c');steel.addColorStop(.33,'#e8e6d7');steel.addColorStop(.45,'#f9ead6');steel.addColorStop(.65,'#758b90');steel.addColorStop(.88,'#344852');steel.addColorStop(1,'#0d222a');
+  ctx.fillStyle=steel;ctx.beginPath();ctx.moveTo(-21,-169);ctx.quadraticCurveTo(-24,-192,-7,-207);ctx.quadraticCurveTo(17,-201,21,-176);ctx.lineTo(22,358);ctx.quadraticCurveTo(15,448,0,525);ctx.quadraticCurveTo(-16,449,-23,357);ctx.closePath();ctx.fill();ctx.restore();
+  // Repaint exact metal without the shadow so highlights remain unblurred.
+  ctx.fillStyle=steel;ctx.beginPath();ctx.moveTo(-21,-169);ctx.quadraticCurveTo(-24,-192,-7,-207);ctx.quadraticCurveTo(17,-201,21,-176);ctx.lineTo(22,358);ctx.quadraticCurveTo(15,448,0,525);ctx.quadraticCurveTo(-16,449,-23,357);ctx.closePath();ctx.fill();
+  // Needle eye: a real unpainted hole, lined with silver lips.
+  ctx.save();ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.ellipse(0,0,10,37,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  // Restore the dark cloth through the aperture after knockout.
+  ctx.fillStyle='#0c2628';ctx.beginPath();ctx.ellipse(0,0,8.6,35,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#f7e9cd';ctx.lineWidth=2.4;ctx.beginPath();ctx.ellipse(-.4,0,12,39,0,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='rgba(30,53,61,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(2,0,14,42,0,-Math.PI/2,Math.PI/2);ctx.stroke();
+  ctx.strokeStyle='rgba(255,252,216,.74)';ctx.lineWidth=1.15;ctx.beginPath();ctx.moveTo(-15,-163);ctx.lineTo(-15,-52);ctx.moveTo(-14,52);ctx.lineTo(-14,350);ctx.quadraticCurveTo(-9,430,0,493);ctx.stroke();
+  ctx.strokeStyle='rgba(12,30,37,.65)';ctx.beginPath();ctx.moveTo(17,-150);ctx.lineTo(17,344);ctx.stroke();
+  for(let i=0;i<8;i++){let yy=80+i*34;ctx.strokeStyle='rgba(255,255,232,.05)';ctx.beginPath();ctx.moveTo(-20,yy);ctx.lineTo(20,yy+2);ctx.stroke()}
+  ctx.restore();}
+function threadPath(progress,offset=0){ // Three cubic spans: spool, return loop, and the unattainable eye.
+  const p=tip;let q=progress;
+  const start={x:95,y:694},c1={x:260,y:680},c2={x:120,y:478};
+  const mid1={x:315,y:551},mid2={x:395,y:604},middle={x:420,y:480};
+  const a={x:middle.x+offset*.3,y:middle.y};
+  // The last third bows as it tightens; displacement travels as a damped travelling wave.
+  let pull=clamp((p.x-home.x)/210,0,1),r=75*(1-pull)+18;
+  let end1={x:middle.x+72*(1-pull*.27)+wave*.18*Math.sin(phase),y:middle.y-72*(1-pull*.2)+offset};
+  let end2={x:p.x-r*.8,y:p.y+108*(1-pull)+wave*.45*Math.sin(phase+1)};
+  ctx.moveTo(start.x,start.y);ctx.bezierCurveTo(c1.x,c1.y,c2.x,c2.y,mid1.x,mid1.y);
+  ctx.bezierCurveTo(mid2.x,mid2.y,middle.x-85,middle.y+85,a.x,a.y);
+  ctx.bezierCurveTo(end1.x,end1.y,end2.x,end2.y,p.x,p.y);
+}
+function strokeThread(offset,color,line,blur=0){ctx.save();ctx.beginPath();threadPath(1,offset);ctx.lineWidth=line;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=color;if(blur){ctx.shadowColor='#030b0c';ctx.shadowBlur=blur;ctx.shadowOffsetY=7}ctx.stroke();ctx.restore()}
+function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#07191d';ctx.fillRect(0,0,width,height);ctx.save();ctx.translate(offX,offY);ctx.scale(scale,scale);
+  let ground=ctx.createRadialGradient(430,300,70,450,400,820);ground.addColorStop(0,'#153136');ground.addColorStop(.52,'#0b2529');ground.addColorStop(1,'#061317');ctx.fillStyle=ground;ctx.fillRect(0,0,W,H);
+  // Woven ground: fine warp and weft, visibly different from smooth computer black.
+  for(let x=-10;x<W+10;x+=8){ctx.strokeStyle=x%4?'rgba(193,216,198,.032)':'rgba(188,219,203,.047)';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+18,H);ctx.stroke()}
+  for(let y=2;y<H;y+=9){ctx.strokeStyle='rgba(0,0,0,.14)';ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+3);ctx.stroke()}
+  for(let f of fuzz){ctx.fillStyle='rgba(215,209,178,'+f.a+')';ctx.fillRect(f.x,f.y,1.6,.6)}
+  // Needle shadow and softly burnished metal.
+  drawNeedle();
+  // Tangled thread sits above the cloth, and in places casts its own shallow shadow.
+  strokeThread(4,'rgba(0,0,0,.62)',10,17);
+  strokeThread(0,'#4e2419',8.7);
+  let cord=ctx.createLinearGradient(80,500,750,200);cord.addColorStop(0,'#764229');cord.addColorStop(.25,'#e89b4c');cord.addColorStop(.56,'#ffcc7f');cord.addColorStop(.78,'#d97937');cord.addColorStop(1,'#f6bb71');strokeThread(-.9,cord,5.8);
+  strokeThread(-2.3,'rgba(255,235,175,.78)',1.35);
+  // Each end has a fine frayed gold tip; it never passes the dark void.
+  ctx.save();ctx.translate(tip.x,tip.y);let a=Math.atan2(tip.y-386,tip.x-520);ctx.rotate(a);ctx.strokeStyle='#f8d2a0';ctx.lineWidth=1.4;for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(-12,i*.45);ctx.quadraticCurveTo(-2,i*2,9+Math.abs(i)*3,i*2.4);ctx.stroke()}ctx.fillStyle='#ffe2aa';ctx.beginPath();ctx.arc(0,0,3.5,0,Math.PI*2);ctx.fill();ctx.restore();
+  // A hair-width relationship indicated by two quiet witness marks, not a measurement.
+  const gap=Math.hypot(tip.x-eye.x,tip.y-eye.y);if(gap<96){ctx.strokeStyle='rgba(238,187,126,.37)';ctx.lineWidth=1;ctx.setLineDash([2,5]);ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(eye.x,eye.y);ctx.stroke();ctx.setLineDash([])}
+  ctx.strokeStyle='rgba(201,181,144,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(54,58);ctx.lineTo(54,96);ctx.moveTo(50,76);ctx.lineTo(78,76);ctx.moveTo(850,710);ctx.lineTo(874,710);ctx.moveTo(862,698);ctx.lineTo(862,725);ctx.stroke();
+  ctx.fillStyle='#b5af94';ctx.font='11px ui-monospace,Consolas,monospace';ctx.fillText('THE EYE / OPEN',557,82);ctx.fillText('THE THREAD / NOT THROUGH',85,750);
+  ctx.restore();}
+function moveFrame(now){if(!last)last=now;const dt=Math.min(.043,Math.max(0,(now-last)/1000));last=now;
+ if(!held){let k=36,friction=Math.exp(-10*dt);v.x=(v.x+(goal.x-tip.x)*k*dt)*friction;v.y=(v.y+(goal.y-tip.y)*k*dt)*friction;const nx=nearGuard({x:tip.x+v.x*dt,y:tip.y+v.y*dt});if(Math.hypot(tip.x-nx.x,tip.y-nx.y)>.003){tip=nx;dirty=true}if(wave>.01){wave*=Math.exp(-4*dt);phase+=dt*14;dirty=true}}
+ if(dirty){draw();dirty=false}requestAnimationFrame(moveFrame)}
+function pointer(e){let p=coords(e);target(p.x,p.y,'THE THREAD / IN YOUR HAND')}
+canvas.addEventListener('pointerdown',e=>{drag=true;canvas.setPointerCapture(e.pointerId);pointer(e)});
+canvas.addEventListener('pointermove',e=>{if(drag)pointer(e)});
+function release(e){if(drag){drag=false;announce('THE THREAD / STILL OUTSIDE')}}
+canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);
+document.getElementById('near').addEventListener('click',()=>target(eye.x-33,eye.y+3,'THE THREAD / ALMOST'));
+document.getElementById('loose').addEventListener('click',homeward);
+holdBtn.addEventListener('click',toggle);document.getElementById('reset').addEventListener('click',reset);
+addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;if(e.target.tagName==='BUTTON'&&(e.key===' '||e.key==='Enter'))return;
+ const k=e.key;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','r','R','t','T','l','L'].includes(k))e.preventDefault();
+ if(k==='ArrowLeft')target(goal.x-14,goal.y,'THE THREAD / LEFT');else if(k==='ArrowRight')target(goal.x+14,goal.y,'THE THREAD / RIGHT');else if(k==='ArrowUp')target(goal.x,goal.y-14,'THE THREAD / UP');else if(k==='ArrowDown')target(goal.x,goal.y+14,'THE THREAD / DOWN');else if(k===' ')toggle();else if(k.toLowerCase()==='t')target(eye.x-33,eye.y+3,'THE THREAD / ALMOST');else if(k.toLowerCase()==='l')homeward();else if(k.toLowerCase()==='r')reset()});
+addEventListener('resize',updateSize);updateSize();reset();requestAnimationFrame(moveFrame);
+})();
+</script>
+</body>
+</html>
