@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>AUTOART 0026 — The Lanterns Have Gills</title>
+<style>
+:root{--foam:#e9e9d4;--aqua:#a0e5db;--coral:#ffb7a2;--deep:#061927}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--deep);color:var(--foam)}
+body{font-family:Georgia,'Times New Roman',serif;user-select:none}
+canvas{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:manipulation}
+header{position:fixed;top:clamp(24px,4.4vh,60px);left:clamp(26px,5.1vw,76px);z-index:2;pointer-events:none;text-shadow:0 2px 12px #061927a0}
+.serial{font:700 11px/1.7 ui-monospace,Consolas,monospace;letter-spacing:.25em;color:#98cfcb}
+h1{font-weight:400;font-size:clamp(46px,6vw,92px);line-height:.89;letter-spacing:-.06em;margin:17px 0 17px}
+h1 em{font-weight:400;font-style:italic;color:#ffb9a3}
+header p{color:#c4d7d0;font-size:clamp(13px,1.2vw,17px);line-height:1.5;max-width:360px;margin:0}
+footer{position:fixed;bottom:clamp(20px,4vh,45px);left:clamp(26px,5.1vw,76px);right:clamp(26px,5.1vw,76px);z-index:3;display:flex;justify-content:space-between;align-items:end;gap:25px;font:600 10px/1.8 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#b7d9d4}
+footer .right{text-align:right;white-space:nowrap;color:#ffbfaa}
+button{font:600 10px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.09em;color:#d8ebe1;background:#0e3342ce;border:1px solid #56838c;padding:7px 9px;margin:5px 5px 0 0;cursor:pointer}
+button:hover{background:#1e5260;border-color:#a2d9cf}
+button:focus-visible{outline:2px solid #ffbfa9;outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media(max-width:650px){header{top:22px;left:21px}.serial{font-size:9px}h1{font-size:clamp(44px,11vw,61px);margin:10px 0 13px}header p{font-size:12px;max-width:225px}footer{left:19px;right:16px;bottom:13px;display:block;font-size:9px}footer .right{text-align:left;margin-top:6px}button{font-size:10px;padding:8px 9px}}
+</style>
+</head>
+<body>
+<canvas id="sea" role="img" aria-label="Three translucent living lanterns drift in a deep blue ocean. Their ribbed bells and flowing tentacles carry rose, turquoise and lilac light. Select one to send a pulse through its body."></canvas>
+<header><div class="serial">AUTOART / 0026 &nbsp;·&nbsp; A SUBMERGED ASSEMBLY</div><h1>The Lanterns<br><em>Have Gills</em></h1><p>Nothing here is burning.<br>Every light is a way of breathing.</p></header>
+<footer><div>CLICK A LANTERN TO WAKE IT &nbsp;·&nbsp; ← → CHOOSE &nbsp;·&nbsp; ENTER SEND LIGHT<br><button id="wake" type="button">SEND LIGHT ↝</button><button id="hold" type="button">HOLD ∥</button><button id="restore" type="button">RESTORE ↺</button></div><div class="right" id="counter">THREE LIGHTS / ALL BREATHING</div></footer>
+<div class="sr" id="status" role="status" aria-live="polite">Three lanterns drift in the water.</div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('sea'),ctx=canvas.getContext('2d',{alpha:false});
+const status=document.getElementById('status'),counter=document.getElementById('counter'),hold=document.getElementById('hold');
+const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const palettes=[['#ffb59e','#f57a91','#ffe3bd'],['#97f4db','#49c6c8','#e4ffe4'],['#d5bafb','#947edc','#ffe9eb']];
+const animals=[{x:390,y:420,r:168,phase:.3,arms:11},{x:873,y:295,r:114,phase:2.2,arms:9},{x:985,y:616,r:80,phase:4.2,arms:8}];
+let W=1200,H=800,mobile=false,dpr=1,clock=0,last=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,selected=0,pulses=[],dirty=true;
+function hash(n){n=Math.imul((n|0)^0x56a9d,0x45d9f3b);n=Math.imul(n^(n>>>16),0x45d9f3b);return ((n^(n>>>16))>>>0)/4294967296}
+const plankton=Array.from({length:125},(_,i)=>({x:hash(i*17+3),y:hash(i*29+19),r:.5+hash(i*71+7)*1.7,p:hash(i*31+27)*TAU}));
+function resize(){mobile=innerWidth<680;W=mobile?620:1200;H=mobile?1120:800;
+ const p=mobile?[[310,488,142],[173,850,90],[465,836,83]]:[[390,420,168],[873,295,114],[985,616,80]];
+ animals.forEach((a,i)=>{[a.x,a.y,a.r]=p[i]});dpr=Math.min(devicePixelRatio||1,1.7);canvas.width=Math.max(1,Math.round(innerWidth*dpr));canvas.height=Math.max(1,Math.round(innerHeight*dpr));dirty=true}
+function line(x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+function ellipse(x,y,rx,ry,col){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fillStyle=col;ctx.fill()}
+function backdrop(){let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#081a2b');g.addColorStop(.46,'#073342');g.addColorStop(1,'#071d34');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ // Four broad shafts: almost imperceptible paths rather than a graphic grid.
+ ctx.save();ctx.globalCompositeOperation='screen';for(let j=0;j<4;j++){let x=W*(.09+j*.28);let ray=ctx.createLinearGradient(x,0,x+95,H);ray.addColorStop(0,'#83bfc316');ray.addColorStop(1,'#639eaa00');ctx.beginPath();ctx.moveTo(x-55,-20);ctx.lineTo(x+85,-20);ctx.lineTo(x+240,H);ctx.lineTo(x+50,H);ctx.closePath();ctx.fillStyle=ray;ctx.fill()}ctx.restore();
+ for(const p of plankton){let x=p.x*W+Math.sin(clock*.23+p.p)*8,y=(p.y*H+clock*(1.4+p.r*.4))%H;ellipse(x,y,p.r,p.r*.72,'rgba(187,221,216,'+(.08+.14*(.5+.5*Math.sin(clock*.7+p.p))).toFixed(3)+')')}
+ // Partial distant contours evoke water that exceeds the paper, not a seafloor.
+ ctx.strokeStyle='#6ea6a817';ctx.lineWidth=1;for(let k=0;k<8;k++){ctx.beginPath();let yy=H*(.20+.095*k);for(let x=0;x<=W;x+=14){let y=yy+11*Math.sin(x*.008+k*.9)+3*Math.sin(x*.024-k);if(!x)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke()}
+}
+function jelly(a,i){const c=palettes[i],r=a.r,t=clock,breath=1+.038*Math.sin(t*.93+a.phase),driftY=11*Math.sin(t*.36+a.phase),driftX=6*Math.cos(t*.28+a.phase);let x=a.x+driftX,y=a.y+driftY;
+ ctx.save();ctx.translate(x,y);ctx.scale(breath,1+.018*Math.sin(t*.93+a.phase));
+ let halo=ctx.createRadialGradient(0,-r*.23,r*.10,0,-r*.15,r*2);halo.addColorStop(0,c[0]+'49');halo.addColorStop(.45,c[1]+'19');halo.addColorStop(1,c[1]+'00');ctx.fillStyle=halo;ctx.fillRect(-2*r,-2*r,4*r,4*r);
+ // Filaments first: they are attached to, and partly hidden by, the translucent bell.
+ for(let j=0;j<a.arms;j++){let u=(j/(a.arms-1)-.5)*1.68,xx=u*r,depth=(2.1+.45*hash(j*17+i*79))*r;
+  ctx.beginPath();ctx.moveTo(xx,-r*.015);for(let k=1;k<=18;k++){let q=k/18,sw=(Math.sin(q*8-t*.55+i+j*.68)-Math.sin(i+j*.68))*(9+21*q)+(u*16*q);let px=xx+sw,py=q*depth*(.80+.16*(1-Math.abs(u)));ctx.lineTo(px,py)}
+  ctx.lineCap='round';ctx.strokeStyle=c[1]+'58';ctx.lineWidth=j%3===0?2.5:1.15;ctx.stroke();ctx.strokeStyle=c[2]+'66';ctx.lineWidth=.55;ctx.stroke();
+  for(let k=3;k<17;k+=5){let q=k/18,sw=(Math.sin(q*8-t*.55+i+j*.68)-Math.sin(i+j*.68))*(9+21*q)+(u*16*q);ellipse(xx+sw,q*depth*(.80+.16*(1-Math.abs(u))),j%3?1.4:2.6,j%3?1.4:3.3,c[2]+'8c')}
+ }
+ // Four broad internal organs behave like streamers, without random ribbons.
+ for(let k=0;k<4;k++){let xx=(k-1.5)*r*.17;ctx.beginPath();ctx.moveTo(xx,-r*.22);for(let s=1;s<=22;s++){let q=s/22;let yy=q*r*1.9,dx=xx+Math.sin(q*7.2-t*.65+k*.9+i)*(8+q*18);ctx.lineTo(dx,yy)}ctx.strokeStyle=k%2?c[0]+'65':c[2]+'60';ctx.lineWidth=9-k*1.1;ctx.lineCap='round';ctx.stroke();ctx.strokeStyle=c[2]+'6f';ctx.lineWidth=1;ctx.stroke()}
+ // Scalloped underside: a transparent umbrella rather than a circular icon.
+ ctx.beginPath();ctx.moveTo(-r,0);ctx.bezierCurveTo(-r*.97,-r*.58,-r*.49,-r*1.02,0,-r*1.06);ctx.bezierCurveTo(r*.49,-r*1.02,r*.97,-r*.58,r,0);
+ for(let k=8;k>=0;k--){let q=k/8,xx=(q*2-1)*r,yy=-r*.04+Math.sin(q*Math.PI*8)*r*.085;ctx.lineTo(xx,yy)}ctx.closePath();
+ let bell=ctx.createLinearGradient(-r*.7,-r*.86,r*.85,r*.2);bell.addColorStop(0,c[0]+'74');bell.addColorStop(.46,c[1]+'b5');bell.addColorStop(1,c[2]+'48');ctx.fillStyle=bell;ctx.fill();ctx.strokeStyle=c[2]+'c5';ctx.lineWidth=2.5;ctx.stroke();
+ ctx.save();ctx.clip();for(let k=0;k<13;k++){let u=k/12*2-1;ctx.beginPath();ctx.moveTo(0,-r*.98);ctx.bezierCurveTo(u*r*.2,-r*.72,u*r*.76,-r*.19,u*r,0);ctx.strokeStyle=k%2===0?c[2]+'8d':c[1]+'a0';ctx.lineWidth=k%3===0?2:1;ctx.stroke()}
+ for(let k=0;k<24;k++){let u=hash(k*31+i*17),v=hash(k*29+6),px=(u*2-1)*r*.78,py=-r*(.14+.77*v);ellipse(px,py,1.3+hash(k*9)*1.6,1,c[2]+'66')}
+ ctx.restore();
+ ctx.beginPath();ctx.moveTo(-r*.82,-r*.18);ctx.bezierCurveTo(-r*.44,-r*.52,r*.43,-r*.47,r*.82,-r*.17);ctx.strokeStyle=c[2]+'cb';ctx.lineWidth=2;ctx.stroke();
+ // A small heart marks the bell as living matter, not a light-bulb.
+ ellipse(-r*.12,-r*.29,r*.095,r*.075,c[2]+'cf');ellipse(r*.12,-r*.29,r*.095,r*.075,c[2]+'cf');ellipse(0,-r*.22,r*.052,r*.11,c[1]+'e0');
+ // The selected animal is indicated by three faint floating parentheses, not a UI rectangle.
+ if(selected===i){ctx.lineWidth=1.25;ctx.strokeStyle=c[2]+'a9';for(let side of [-1,1]){ctx.beginPath();ctx.arc(0,-r*.38,r*1.32,side===-1?2.25:-.92,side===-1?3.6:.45);ctx.stroke()}}
+ for(const p of pulses){if(p.i!==i)continue;let age=t-p.start;if(age<0||age>2.8)continue;let q=age/2.8;ctx.beginPath();ctx.ellipse(0,-r*.35,r*(.20+1.40*q),r*(.13+.84*q),0,0,TAU);ctx.strokeStyle=c[2]+Math.round(150*(1-q)).toString(16).padStart(2,'0');ctx.lineWidth=3.6*(1-q)+.4;ctx.stroke();for(let j=0;j<7;j++){let xx=(j/6-.5)*r*1.4,yy=r*(q*2.0);ellipse(xx+Math.sin(q*7+j)*9,yy,2.3*(1-q)+.4,3*(1-q)+.5,c[2]+Math.round(220*(1-q)).toString(16).padStart(2,'0'))}}
+ ctx.restore();
+}
+function render(){ctx.setTransform(1,0,0,1,0,0);const z=Math.max(canvas.width/W,canvas.height/H),ox=(canvas.width-W*z)/2,oy=(canvas.height-H*z)/2;ctx.fillStyle='#071927';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.setTransform(z,0,0,z,ox,oy);backdrop();animals.forEach((a,i)=>jelly(a,i));ctx.fillStyle='#d3d6bd66';ctx.font='11px ui-monospace,monospace';ctx.textAlign='right';ctx.fillText('NO FLAME · NO WICK · THREE LIVING LAMPS',W-38,H-33);ctx.textAlign='left'}
+function wake(i=selected){selected=i;pulses=pulses.filter(p=>clock-p.start<2.8);if(pulses.length>=8)pulses.shift();pulses.push({i,start:clock});counter.textContent=['ROSE','SEA-GLASS','LILAC'][i]+' / LIGHT SENT';status.textContent='Light passes through the '+['rose','sea-glass','lilac'][i]+' lantern.';dirty=true}
+function choose(step){selected=(selected+step+3)%3;counter.textContent=['ROSE','SEA-GLASS','LILAC'][selected]+' / SELECTED';status.textContent='Selected '+['rose','sea-glass','lilac'][selected]+' lantern.';dirty=true}
+function toggle(){paused=!paused;hold.textContent=paused?'RESUME ▶':'HOLD ∥';status.textContent=paused?'The water is held.':'The water moves again.';dirty=true}
+function reset(){pulses=[];clock=0;last=0;selected=0;paused=matchMedia('(prefers-reduced-motion: reduce)').matches;hold.textContent=paused?'RESUME ▶':'HOLD ∥';counter.textContent='THREE LIGHTS / ALL BREATHING';status.textContent='Three lanterns drift in the water again.';dirty=true}
+canvas.addEventListener('pointerdown',e=>{const rect=canvas.getBoundingClientRect(),z=Math.max(rect.width/W,rect.height/H),ox=(rect.width-W*z)/2,oy=(rect.height-H*z)/2,mx=(e.clientX-rect.left-ox)/z,my=(e.clientY-rect.top-oy)/z;let choice=0,best=Infinity;animals.forEach((a,i)=>{let d=Math.hypot((mx-a.x)/a.r,(my-(a.y-a.r*.38))/(a.r*1.35));if(d<best){best=d;choice=i}});if(best<1.75)wake(choice)});
+window.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA'].includes(e.target.tagName))return;const k=e.key;if(['ArrowLeft','ArrowRight','Enter',' ','Spacebar','r','R','1','2','3'].includes(k))e.preventDefault();if(k==='ArrowLeft')choose(-1);else if(k==='ArrowRight')choose(1);else if(k==='Enter')wake();else if(k===' '||k==='Spacebar')toggle();else if(k==='r'||k==='R')reset();else if(/^[1-3]$/.test(k))wake(Number(k)-1)});
+document.getElementById('wake').addEventListener('click',()=>wake());hold.addEventListener('click',toggle);document.getElementById('restore').addEventListener('click',reset);
+window.addEventListener('resize',resize);resize();hold.textContent=paused?'RESUME ▶':'HOLD ∥';
+function tick(now){if(!last)last=now;let dt=clamp((now-last)/1000,0,.05);last=now;if(!paused)clock+=dt;pulses=pulses.filter(p=>clock-p.start<=2.8);if(!paused||dirty){render();dirty=false}requestAnimationFrame(tick)}requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
