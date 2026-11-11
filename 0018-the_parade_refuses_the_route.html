@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AUTOART 0018 — The Parade Refuses the Route</title>
+<style>
+:root{color-scheme:light;background:#ede3cb}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#ede3cb}
+body{touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair}
+canvas{display:block;width:100%;height:100%}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+</style>
+</head>
+<body aria-label="The Parade Refuses the Route. A colourful procession of little flag-bearers keeps wandering off a printed official route. Click or tap to redirect a cluster. Arrow keys position a marker; Enter redirects it. Space pauses and R restarts.">
+<canvas id="scene" role="img" aria-label="An ink-blue, coral, mustard and turquoise procession refuses to stay on a winding route drawn across cream paper."></canvas>
+<p class="sr">Click or tap anywhere to cause a bounded eight-second diversion. Arrow keys move an invisible keyboard marker, Enter diverts at that position, Space pauses or resumes, and R restarts the procession. Reduced-motion settings hold the parade still between interactions.</p>
+<script>
+(()=>{
+'use strict';
+const c=document.getElementById('scene'),g=c.getContext('2d',{alpha:false});
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ink='#152e3a',paper='#ede3cb',red='#e94a31',gold='#edae36',teal='#278e90',blue='#34629a';
+const tones=[red,gold,teal,blue,'#d2745d','#6d8a69'];
+const N=49,events=[];let W=0,H=0,D=1,scale=1,ox=0,oy=0,raf=0,last=performance.now(),clock=0,paused=reduce;
+let marker={x:600,y:430},hasMarker=false;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
+const frac=v=>v-Math.floor(v);
+function resize(){W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,1.75);
+ c.width=Math.max(1,Math.round(W*D));c.height=Math.max(1,Math.round(H*D));
+ scale=Math.max(W/1200,H/800);ox=(W-1200*scale)/2;oy=(H-800*scale)/2;
+ draw();wake();}
+function route(u){return{x:70+1060*u,y:613-312*u+48*Math.sin(u*Math.PI*2.45)+23*Math.sin(u*Math.PI*5.1)}}
+function trace(points,color,width,dash=[]){g.beginPath();points.forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y));g.strokeStyle=color;g.lineWidth=width;g.setLineDash(dash);g.stroke();g.setLineDash([]);}
+function text(s,x,y,size,color=ink,align='left',weight=800){g.fillStyle=color;g.font=`${weight} ${size}px system-ui,Arial,sans-serif`;g.textAlign=align;g.fillText(s,x,y);}
+function background(){g.fillStyle=paper;g.fillRect(0,0,1200,800);
+ // A print-shop sheet: marks, overprinted blocks, and a deliberately useless compass.
+ g.fillStyle='#e3d6b7';g.fillRect(35,37,1130,726);
+ g.fillStyle=paper;g.fillRect(49,51,1102,698);
+ g.strokeStyle='#b2ac98';g.lineWidth=1;g.strokeRect(49,51,1102,698);
+ for(let i=0;i<22;i++){let x=68+i*49.1;g.strokeStyle='rgba(21,46,58,.10)';g.beginPath();g.moveTo(x,51);g.lineTo(x,62+(i%3)*5);g.stroke();}
+ // Registration circle, printed off-axis: clearly not a physical destination.
+ g.save();g.translate(978,188);g.rotate(-.12);g.strokeStyle='rgba(233,74,49,.19)';g.lineWidth=17;g.beginPath();g.arc(0,0,104,0,Math.PI*2);g.stroke();
+ g.lineWidth=4;g.beginPath();g.moveTo(-76,66);g.lineTo(86,-70);g.stroke();g.restore();
+ g.fillStyle=ink;g.fillRect(49,51,9,698);g.fillRect(49,741,1102,8);
+ text('AUTOART  /  0018',85,95,15,ink,'left',700);
+ text('THE PARADE',84,168,56);text('REFUSES',84,232,69,red);text('THE ROUTE',84,296,56);
+ g.fillStyle=ink;g.fillRect(87,319,282,5);
+ text('AN EXERCISE IN GOING ELSEWHERE',88,347,13,ink,'left',650);
+ text('OFFICIAL PROCESSION PLAN   /   REV. 00',85,713,13,ink,'left',650);
+ text('CLICK TO DIVERT   ·   SPACE TO PAUSE   ·   R TO RESTART',1110,712,12,ink,'right',600);
+ // The printed instruction is straight; its so-called route isn't.
+ const pts=Array.from({length:181},(_,i)=>route(i/180));trace(pts,'#142f3c',33);
+ trace(pts,'#f7ecd2',2.1,[2,13]);
+ g.save();g.translate(1130,route(1).y);g.rotate(-.35);g.fillStyle=ink;g.beginPath();g.moveTo(0,0);g.lineTo(-32,-18);g.lineTo(-32,18);g.closePath();g.fill();g.restore();
+ for(let i=0;i<6;i++){let p=route((i+.5)/6);g.save();g.translate(p.x,p.y);g.fillStyle=paper;g.beginPath();g.arc(0,0,11,0,Math.PI*2);g.fill();g.strokeStyle=ink;g.lineWidth=2;g.stroke();g.restore();}
+}
+function portraitLetterpress(){
+ if(W/H>=.82)return;
+ const l=-ox/scale,vis=W/scale;
+ // On a tall sheet the wide poster's headline would be cropped: reprint it in the visible column.
+ g.fillStyle=paper;g.fillRect(l,67,vis,285);
+ text('AUTOART / 0018',l+19,103,14,ink,'left',700);
+ text('THE PARADE',l+19,155,37,ink);
+ text('REFUSES',l+19,211,50,red);
+ text('THE ROUTE',l+19,262,38,ink);
+ g.fillStyle=ink;g.fillRect(l+20,282,vis-40,4);
+ text('AN EXERCISE IN GOING ELSEWHERE',l+19,309,11,ink,'left',700);
+ g.fillStyle=paper;g.fillRect(l,677,vis,52);
+ text('TAP TO DIVERT  /  SPACE TO PAUSE',l+19,708,10,ink,'left',700);
+}
+function marcher(i){let u=frac((i+.41)/N+clock*(.009+.0015*(i%5))),b=route(u),ang=-.29+Math.cos(u*Math.PI*2.45)*.29;
+ let rebellion=(i%7===0?1:(i%8===2?-.85:(i%11===1?.7:0)));
+ const beat=clock*.74+i*1.39;
+ let offset=rebellion*(95+48*Math.sin(beat*.32)) + 22*Math.sin(beat*.52);
+ let x=b.x+Math.sin(ang)*offset,y=b.y+Math.cos(ang)*offset;
+ for(const e of events){const age=clock-e.t;if(age<0||age>8)continue;
+  const r=Math.hypot(b.x-e.x,b.y-e.y),s=Math.exp(-r*r/72000)*Math.sin(Math.PI*age/8);
+  const dir=((i*17)%9-4)>=0?1:-1;
+  x+=dir*150*s;y+=(-42-60*((i%4)/4))*s;
+ }
+ const sway=paused?0:Math.sin(clock*2.5+i*1.72);
+ x+=sway*4;y+=sway*1.8;
+ g.save();g.translate(x,y);g.rotate(ang*.31+sway*.07);
+ // One individual is a pictogram, not a particle; minor differences confer character.
+ const col=tones[i%tones.length],h=13+(i*7%12),w=14+(i*13%9);
+ g.strokeStyle='rgba(21,46,58,.19)';g.lineWidth=6;g.beginPath();g.moveTo(-w*.6,15);g.lineTo(w*.85,18);g.stroke();
+ g.strokeStyle=ink;g.lineWidth=2.8;g.lineCap='round';g.beginPath();g.moveTo(-4,9);g.lineTo(-7+2*sway,18);g.moveTo(4,9);g.lineTo(7-2*sway,18);g.stroke();
+ g.fillStyle=col;g.fillRect(-w/2,-h/2,w,h);
+ g.fillStyle=ink;g.fillRect(-w/2,-h/2,w,2);
+ g.fillStyle='#f8e7bd';g.fillRect(-2,-1,3,3);
+ g.strokeStyle=ink;g.lineWidth=1.8;g.beginPath();g.moveTo(w*.25,-h*.23);g.lineTo(w*.25,-h-13);g.stroke();
+ g.fillStyle=(i%3===0?red:i%3===1?gold:teal);
+ g.beginPath();g.moveTo(w*.25,-h-13);g.lineTo(w*.25+18,-h-17+sway*2);g.lineTo(w*.25+12,-h-5+sway*2);g.lineTo(w*.25,-h-4);g.fill();
+ if(i%9===0){g.strokeStyle=ink;g.lineWidth=2;g.beginPath();g.arc(0,0,16,Math.PI*.35,Math.PI*.86);g.stroke();}
+ g.restore();
+}
+function draw(){if(!W||!H)return;g.setTransform(D,0,0,D,0,0);g.clearRect(0,0,W,H);
+ g.translate(ox,oy);g.scale(scale,scale);background();portraitLetterpress();
+ // Back-to-front order keeps the small characters legible over the printed route.
+ for(let i=0;i<N;i++)marcher(i);
+ for(const e of events){let age=clock-e.t;if(age<0||age>8)continue;
+  let r=13+age*34;g.strokeStyle=`rgba(233,74,49,${(1-age/8)*.47})`;g.lineWidth=3;g.beginPath();g.arc(e.x,e.y,r,Math.PI*.19,Math.PI*1.62);g.stroke();}
+ if(hasMarker){g.strokeStyle='rgba(21,46,58,.65)';g.lineWidth=2;g.beginPath();g.moveTo(marker.x-11,marker.y);g.lineTo(marker.x+11,marker.y);g.moveTo(marker.x,marker.y-11);g.lineTo(marker.x,marker.y+11);g.stroke();}
+}
+function frame(now){raf=0;let dt=clamp((now-last)/1000,0,.05);last=now;
+ if(!paused)clock+=dt;draw();if(!paused)wake();}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function divert(x,y){events.push({x:clamp(x,0,1200),y:clamp(y,0,800),t:clock});if(events.length>6)events.shift();if(paused){clock+=.45;}draw();wake();}
+function point(e){return{x:(e.clientX-ox)/scale,y:(e.clientY-oy)/scale}}
+addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;let p=point(e);divert(p.x,p.y);},{passive:true});
+addEventListener('keydown',e=>{
+ const key=e.key.toLowerCase();
+ if(['arrowleft','arrowright','arrowup','arrowdown',' ','enter','r'].includes(key))e.preventDefault();
+ if(key===' '){paused=!paused;wake();}
+ else if(key==='r'){clock=0;events.length=0;hasMarker=false;paused=reduce;draw();wake();}
+ else if(key==='enter'){divert(marker.x,marker.y);hasMarker=true;}
+ else if(key.startsWith('arrow')){let step=e.shiftKey?50:26;
+  marker.x=clamp(marker.x+(key==='arrowright'?step:key==='arrowleft'?-step:0),0,1200);
+  marker.y=clamp(marker.y+(key==='arrowdown'?step:key==='arrowup'?-step:0),0,800);hasMarker=true;draw();wake();}
+});
+addEventListener('resize',resize,{passive:true});resize();if(!paused)wake();
+})();
+</script>
+</body>
+</html>
