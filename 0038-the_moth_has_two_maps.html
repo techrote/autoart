@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUTOART 0038 — The Moth Has Two Maps</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#102e33;color:#f6da9a;font-family:Georgia,serif}main{position:relative;height:100svh;min-height:660px;overflow:hidden}
+svg{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}svg:focus-visible{outline:3px solid #f9deab;outline-offset:-4px}
+.top{position:absolute;top:6%;left:4.5%;max-width:300px;pointer-events:none}.id{font:700 11px/1.5 monospace;letter-spacing:.15em;color:#dfba75}h1{font-size:clamp(43px,5.7vw,82px);line-height:.96;font-weight:400;letter-spacing:-.06em;margin:34px 0 20px}
+.top p{font:12px/1.7 monospace;max-width:245px;color:#e8d3ab}
+.bottom{position:absolute;left:4.5%;right:4.5%;bottom:3.5%;display:flex;justify-content:space-between;align-items:end;gap:20px}
+#status{font:700 11px/1.7 monospace;letter-spacing:.07em;background:#0b272bde;border-left:4px solid #e99d58;padding:10px 13px}
+.hint{font:10px/1.7 monospace;color:#d4c4a0}.controls{display:flex;gap:6px}button{font:700 11px monospace;letter-spacing:.05em;background:#e4ba75;border:1px solid #f2daa1;color:#18383c;padding:13px;min-height:44px;cursor:pointer}
+button:hover,button:focus-visible{background:#ffdfa0;outline:2px solid #ffdfa0;outline-offset:2px}button:disabled{opacity:.45}
+.wing{cursor:ew-resize;outline:none}.wing:focus-visible .edge{stroke:#fff2c9;stroke-width:7}
+@media(max-width:700px){main{min-height:690px}.top{top:18px;left:18px;right:18px;max-width:none}.id{font-size:9px}h1{font-size:42px;margin:12px 0 8px}.top p{font-size:10px;line-height:1.45;margin:0}
+svg{position:absolute;top:180px;height:calc(100% - 370px)}
+.bottom{left:0;right:0;bottom:0;height:190px;padding:12px;display:flex;flex-direction:column;align-items:stretch;gap:6px;background:#0c2a2f;border-top:1px solid #4f7371}
+#status{font-size:10px;padding:6px 9px}.hint{font-size:9px;margin:0}.controls{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}button{font-size:9px;letter-spacing:0;padding:10px 2px}}
+</style></head><body><main>
+<svg id="plate" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" tabindex="0" role="group" aria-label="A large asymmetric moth with two conflicting illustrated maps on its wings. Click or drag a wing. Keys 1 and 2 fold wings, P makes an impression, and R restores.">
+<defs><radialGradient id="ground"><stop stop-color="#245457"/><stop offset="1" stop-color="#09272e"/></radialGradient>
+<linearGradient id="leftColour" x2=".8" y2="1"><stop stop-color="#f1c376"/><stop offset=".48" stop-color="#d2765c"/><stop offset="1" stop-color="#744962"/></linearGradient>
+<linearGradient id="rightColour" x2="1" y2=".6"><stop stop-color="#acd3a9"/><stop offset=".58" stop-color="#5b9b9a"/><stop offset="1" stop-color="#31516d"/></linearGradient>
+<clipPath id="upper"><path d="M-10-25C-107-164-227-230-314-220C-387-205-401-122-348-54C-295 24-173 48-9 5Z"/></clipPath>
+<clipPath id="lower"><path d="M-12 6C-116 21-265 48-300 145C-332 239-251 280-166 212C-83 152-43 82-10 30Z"/></clipPath>
+</defs>
+<rect width="1200" height="800" fill="url(#ground)"/>
+<path d="M38 44H1160V754H38ZM54 58H1144V739H54" fill="none" stroke="#c9bd96" stroke-width="1" opacity=".32"/>
+<g id="paper" aria-hidden="true"></g><g id="impressions" aria-hidden="true"></g>
+<g id="wings"></g><g id="body" aria-hidden="true">
+<path d="M719 378Q697 303 668 279M734 378Q758 306 781 278" fill="none" stroke="#d8b16d" stroke-width="2.5"/>
+<ellipse cx="726" cy="470" rx="29" ry="123" fill="#172c34" stroke="#ecc377" stroke-width="5"/>
+<path d="M703 415Q727 425 749 413M698 451Q727 462 754 450M700 492Q726 503 751 489M709 530Q727 542 745 531" fill="none" stroke="#d0aa70" stroke-width="4"/>
+<ellipse cx="726" cy="360" rx="43" ry="45" fill="#28454b" stroke="#ebc176" stroke-width="5"/>
+<path d="M709 357q18-14 35 0" stroke="#f9dfa0" stroke-width="4" fill="none"/>
+<circle cx="711" cy="375" r="3" fill="#f9dfa0"/><circle cx="741" cy="375" r="3" fill="#f9dfa0"/>
+</g>
+<g fill="#dacb99" font-family="monospace" font-size="11" letter-spacing="1.8" opacity=".8">
+<text x="55" y="97">SPECIMEN 038 / INCOMPATIBLE GEOGRAPHIES</text><text x="1145" y="97" text-anchor="end">NO COUNTRY NAMED</text>
+<text x="700" y="727" text-anchor="middle">EVERY FOLD LEAVES A DIFFERENT BORDER</text>
+</g></svg>
+<div class="top"><div class="id">AUTOART / 0038<br>NOCTURNAL CARTOGRAPHY</div><h1>The Moth<br>Has Two<br>Maps</h1><p>Its wings disagree about the place it came from. Fold one. The paper remembers.</p></div>
+<div class="bottom"><div><div id="status" aria-live="polite" role="status">TWO MAPS / NO IMPRESSIONS</div><p class="hint">Touch or drag either wing · 1 / 2 fold · P print · R restore</p></div>
+<div class="controls"><button id="left" type="button">FOLD LEFT</button><button id="print" type="button">TAKE PRINT</button><button id="right" type="button">FOLD RIGHT</button><button id="reset" type="button">RESTORE</button></div></div>
+</main><script>
+(()=>{'use strict';
+const ns='http://www.w3.org/2000/svg',svg=document.getElementById('plate'),layer=document.getElementById('wings'),paper=document.getElementById('paper'),impressions=document.getElementById('impressions'),status=document.getElementById('status');
+const upper='M-10-25C-107-164-227-230-314-220C-387-205-401-122-348-54C-295 24-173 48-9 5Z',lower='M-12 6C-116 21-265 48-300 145C-332 239-251 280-166 212C-83 152-43 82-10 30Z';
+const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches,narrow=matchMedia('(max-width:700px)');
+function size(){svg.setAttribute('viewBox',narrow.matches?'320 0 860 800':'0 0 1200 800')}narrow.addEventListener('change',size);size();
+function elem(tag,attrs,parent){const e=document.createElementNS(ns,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+for(let i=0;i<160;i++){const x=74+(i*101)%1060,y=120+(i*137)%552;elem('path',{d:'M'+x+' '+y+'l2 -2',stroke:'#c4c79e','stroke-width':'.7',opacity:'.16'},paper)}
+const groups=[];
+for(let i=0;i<2;i++){
+ const g=elem('g',{class:'wing',tabindex:'0',role:'button','aria-label':(i?'Right':'Left')+' moth wing: fold or open'},layer);groups.push(g);
+ elem('path',{class:'edge',d:upper,fill:i?'url(#rightColour)':'url(#leftColour)',stroke:'#0d2b32','stroke-width':'5'},g);
+ elem('path',{d:lower,fill:i?'#9bc7a2':'#e7a46e',stroke:'#0d2b32','stroke-width':'5'},g);
+ const a=elem('g',{'clip-path':'url(#upper)'},g),b=elem('g',{'clip-path':'url(#lower)'},g);
+ for(let j=0;j<22;j++){const x=-25-j*13,y=-4-j*9+(i?10:-10);elem('path',{d:'M'+x+' '+(y+70)+'C'+(x-80)+' '+(y+15)+' '+(x-165)+' '+(y-35)+' '+(x-300)+' '+(y-153),stroke:i?'#f2dfa5':'#f6bf9c','stroke-width':j%5===0?'2.4':'1.2',opacity:j%3===0?'.75':'.43',fill:'none'},a)}
+ for(let j=0;j<17;j++){const y=25+j*12;elem('path',{d:'M-7 '+y+'C-93 '+(y-48)+' -204 '+(y-22)+' -327 '+(y+101),stroke:i?'#286064':'#955567','stroke-width':j%4===0?'2.5':'1.3',opacity:'.6',fill:'none'},b)}
+ for(let j=0;j<36;j++){elem('circle',{cx:-40-((j*67+i*24)%290),cy:-172+((j*101+i*26)%360),r:1+j%2,fill:'#f6d9a7',opacity:'.62'},j%2?a:b)}
+ const x=i?-238:-240,y=i?-117:-106;
+ if(i){elem('path',{d:'M'+(x-23)+' '+y+'l23 -41 23 41-23 41Z',stroke:'#f3d69e','stroke-width':3,fill:'none'},g)}
+ else{for(let j=0;j<3;j++)elem('circle',{cx:x,cy:y,r:17+j*15,stroke:'#f9d9a5','stroke-width':'2',fill:'none'},g)}
+ elem('circle',{cx:x,cy:y,r:9,fill:'#17363e'},g);
+ elem('circle',{cx:-195,cy:150,r:34,stroke:'#f4ce91','stroke-width':2,fill:'none'},g);
+ elem('circle',{cx:-195,cy:150,r:11,fill:i?'#edc477':'#294b50'},g);
+ g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.stopPropagation();e.preventDefault();toggle(i)}});
+}
+const initial=[.96,.9];let current=initial.slice(),target=initial.slice(),count=0,raf=0,drag=-1,start=0,startValue=0,moved=false;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function draw(){groups.forEach((g,i)=>g.setAttribute('transform','translate(725 398) scale('+((i?-1:1)*current[i])+' 1)'));status.textContent='LEFT '+Math.round(current[0]*100)+'% / RIGHT '+Math.round(current[1]*100)+'% · '+count+' PRINT'+(count===1?'':'S')+' RETAINED';document.getElementById('print').disabled=count>=8}
+function frame(){raf=0;let moving=false;for(let i=0;i<2;i++){const d=target[i]-current[i];if(Math.abs(d)>.003){current[i]+=d*.22;moving=true}else current[i]=target[i]}draw();if(moving)raf=requestAnimationFrame(frame)}
+function move(){if(reduce){current=target.slice();draw()}else if(!raf)raf=requestAnimationFrame(frame)}
+function toggle(i){target[i]=target[i]>.67?.4:1;move()}
+function imprint(){if(count>=8)return;const set=elem('g',{opacity:String(.24+count*.035)},impressions);for(let i=0;i<2;i++){const g=elem('g',{transform:'translate(725 398) scale('+((i?-1:1)*current[i])+' 1)'},set);for(const d of [upper,lower])elem('path',{d,fill:'none',stroke:i?'#b4d4ae':'#f2a77b','stroke-width':2.4,'stroke-dasharray':count%2?'2 7':'12 9'},g)}count++;draw()}
+function restore(){impressions.replaceChildren();count=0;target=initial.slice();move()}
+function point(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const m=svg.getScreenCTM();return m?p.matrixTransform(m.inverse()):{x:0,y:0}}
+svg.addEventListener('pointerdown',e=>{const p=point(e);if(p.x<350||p.x>1100||p.y<150||p.y>690)return;drag=p.x<725?0:1;start=p.x;startValue=target[drag];moved=false;svg.setPointerCapture(e.pointerId)});
+svg.addEventListener('pointermove',e=>{if(drag<0)return;const delta=(point(e).x-start)*(drag===0?-1:1);if(Math.abs(delta)>3)moved=true;if(moved){target[drag]=clamp(startValue+delta/390,.3,1);move()}});
+svg.addEventListener('pointerup',e=>{if(drag<0)return;const i=drag;drag=-1;if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);if(!moved)toggle(i)});
+svg.addEventListener('pointercancel',()=>{drag=-1});
+document.getElementById('left').onclick=()=>toggle(0);document.getElementById('right').onclick=()=>toggle(1);
+document.getElementById('print').onclick=imprint;document.getElementById('reset').onclick=restore;
+document.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||['INPUT','TEXTAREA'].includes(e.target.tagName))return;if(e.target.tagName==='BUTTON'&&(e.key==='Enter'||e.key===' '))return;const k=e.key.toLowerCase();if(k==='1')toggle(0);else if(k==='2')toggle(1);else if(k==='p')imprint();else if(k==='r')restore()});
+draw();
+})();
+</script></body></html>
