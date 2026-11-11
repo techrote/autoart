@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Word Will Not Stay — Carbon Copy (AUTOART 0025, second edition)</title>
+<style>
+:root{color-scheme:dark;--ink:#111d23;--paper:#e4d7b7;--warm:#ce6a48;--line:#7c918c}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d171b;color:#e4d7b7}
+body{display:flex;flex-direction:column;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+canvas{display:block;min-height:0;flex:1;width:100%;touch-action:manipulation;cursor:crosshair}
+footer{flex:none;min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px clamp(16px,4.6vw,70px);border-top:1px solid #537076;background:#101e25;box-shadow:0 -12px 50px #050d11;z-index:1}
+.controls{display:flex;flex-wrap:wrap;gap:7px}
+button{font:600 12px/1.3 ui-monospace,Consolas,monospace;letter-spacing:.065em;border:1px solid #718b8b;padding:10px 13px;min-height:41px;color:#e8e0ce;background:#1b3138;cursor:pointer;border-radius:0}
+button:hover{background:#31505a;border-color:#f1b78e}button:focus-visible{outline:3px solid #ffa879;outline-offset:3px}
+.counter{text-align:right;letter-spacing:.1em;font:600 12px/1.55 ui-monospace,Consolas,monospace;color:#e9bb96;white-space:nowrap}
+.counter small{display:block;font-size:10px;color:#c0cfc9;letter-spacing:.06em}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:700px){footer{padding:9px 13px 11px;min-height:108px;align-items:stretch;flex-direction:column-reverse;gap:4px}.counter{text-align:left;font-size:11px}.counter small{display:inline;margin-left:10px}.controls{gap:5px}.controls button{font-size:11px;min-height:39px;padding:8px 12px}}
+</style>
+</head>
+<body>
+<canvas id="art" role="img" aria-label="Five suspended letterpress blocks spell STILL above a press. Release them in any order. Each impression prints onto a lower proof in the order you chose; the vacated upper sockets remain visible."></canvas>
+<footer>
+<div class="controls"><button type="button" id="release">RELEASE ↘</button><button type="button" id="hold">HOLD ∥</button><button type="button" id="reset">RESTORE ↺</button></div>
+<div class="counter"><span id="counter">00 / 05 IMPRESSIONS</span><small id="readout">THE SECOND READING / —</small></div>
+</footer>
+<div id="announce" class="sr-only" role="status" aria-live="polite">Five suspended letters. The lower proof is blank.</div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('art'),ctx=canvas.getContext('2d',{alpha:false});
+const counter=document.getElementById('counter'),readout=document.getElementById('readout'),announce=document.getElementById('announce'),holdButton=document.getElementById('hold');
+const letters='STILL'.split(''),inks=['#f1c59f','#dbe3d1','#e8d6be','#c3d8d3','#dbe3d1'];
+const motion=matchMedia('(prefers-reduced-motion: reduce)');
+let releases=Array(5).fill(null),order=[],selected=0,clock=0,last=0,paused=motion.matches,dirty=true,layout=null,dpr=1;
+const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v)),ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
+function geometry(){const mobile=innerWidth<=700;const W=mobile?720:1200,H=mobile?1300:900;
+ let pos=mobile?[[255,436],[465,436],[155,724],[360,724],[565,724]]:[[290,375],[445,375],[600,375],[755,375],[910,375]];
+ layout={mobile,W,H,pos,bw:mobile?136:135,bh:mobile?194:222,bed:mobile?1010:644,proofY:mobile?1150:763};
+ dpr=Math.min(devicePixelRatio||1,1.75);canvas.width=Math.max(1,Math.round(canvas.clientWidth*dpr));canvas.height=Math.max(1,Math.round(canvas.clientHeight*dpr));dirty=true;
+}
+function line(x,y,xx,yy,colour='#67827e',width=1){ctx.strokeStyle=colour;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(xx,yy);ctx.stroke()}
+function rect(x,y,w,h,colour){ctx.fillStyle=colour;ctx.fillRect(x,y,w,h)}
+function text(t,x,y,size,col='#e1d6bd',align='left',font='Georgia,serif'){ctx.fillStyle=col;ctx.font=size+'px '+font;ctx.textAlign=align;ctx.fillText(t,x,y);ctx.textAlign='left'}
+function hatch(x,y,w,h,step=12,col='rgba(205,185,151,.12)'){ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();for(let k=-h;k<w+h;k+=step)line(x+k,y+h,x+k+h,y,col,.75);ctx.restore()}
+function seedGrain(W,H){for(let i=0;i<390;i++){let x=(i*137.18)%W,y=(i*263.41)%H;rect(x,y,i%4===0?2:1,1,i%3===0?'rgba(229,205,167,.14)':'rgba(100,130,128,.14)')}}
+function backdrop(){const {W,H,mobile,bed}=layout;
+ rect(0,0,W,H,'#101d23');seedGrain(W,H);
+ rect(29,25,W-58,H-49,'#182b30');ctx.strokeStyle='#526b69';ctx.lineWidth=2;ctx.strokeRect(29,25,W-58,H-49);
+ // Editorial letterpress header, outside and above the mechanism.
+ rect(47,46,7,mobile?155:117,'#d66d4a');
+ text('THE WORD',76,mobile?91:99,mobile?41:48,'#e4d8ba');
+ text('WILL NOT STAY',76,mobile?135:144,mobile?39:47,'#f1a17e');
+ text('CARBON COPY / AFTER AUTOART 0025',W-64,70,12,'#a9c1ba','right','ui-monospace,monospace');
+ text('The metal falls. The paper keeps the order.',W-64,mobile?174:119,14,'#c6c7b6','right','Georgia,serif');
+ line(76,mobile?201:172,W-76,mobile?201:172,'#607774',1.5);
+ // The printing machine is a grounded, rather than ornamental, second actor.
+ const top=mobile?253:210,bottom=bed+29;
+ rect(68,top,W-136,bottom-top,'#10232b');
+ rect(80,top+11,W-160,bottom-top-22,'#1d363e');hatch(80,top+11,W-160,bottom-top-22,18,'rgba(136,164,155,.09)');
+ for(let x=96;x<W-70;x+=29)line(x,top+8,x,bed-8,'rgba(122,157,154,.1)',.8);
+ rect(85,top+8,W-170,2,'#708b85');rect(85,bed+4,W-170,3,'#b37555');
+ text('F O R M E',102,top+32,13,'#a6b7aa','left','ui-monospace,monospace');
+ text('P R E S S   B E D',W-104,bed-14,12,'#b7c9b8','right','ui-monospace,monospace');
+ for(let k=0;k<11;k++){const x=102+k*(W-204)/10;line(x,top,x,top+16,'#91a39a',2);line(x,bed+4,x,bed+21,'#b37555',1)}
+ // Paper, pressure rails and calibrated roller shadows grow more visible as objects arrive.
+ const n=order.length;rect(89,bed+29,W-178,28,'#090f12');rect(105,bed+34,W-210,4,'#587077');
+ for(let i=0;i<5;i++){let x=130+i*(W-260)/4;rect(x,bed+39,23,3,'#775c4a')}
+ if(n){ctx.fillStyle='rgba(202,95,62,'+(.07+n*.043)+')';ctx.fillRect(100,bed+9,W-200,16)}
+ // Proof sheet below the compression rail. One second line of type is actually authored by the viewer.
+ const py=layout.proofY;rect(68,py-51,W-136,158,'#dfd0af');rect(68,py-51,W-136,4,'#ba6446');
+ hatch(70,py-43,W-140,148,17,'rgba(79,76,60,.075)');
+ text('PROOF  /  NO. '+String(n).padStart(2,'0'),87,py-30,11,'#48534f','left','ui-monospace,monospace');
+ text('INK WILL NOT RETURN TO THE TYPE',W-88,py+89,10,'#68736b','right','ui-monospace,monospace');
+}
+function slug(i){const {pos,bw,bh,bed,mobile}=layout,[sx,sy]=pos[i],r=releases[i];
+ const age=r===null?-1:Math.max(0,clock-r),fallen=age>=1.85,drop=ease(age/1.52);
+ let finalY=bed-bh*.52-3,dx=0,dy=0,twist=0;
+ if(r!==null){dy=(finalY-sy)*drop;dx=Math.sin(Math.PI*clamp(age/1.52,0,1))*((i-2)*8);twist=((i&1)?1:-1)*.055*drop;
+ if(age>1.52&&age<1.85){let t=(age-1.52)/.33;dy+=Math.sin(t*Math.PI)*-10*(1-t)} }
+ let sway=r===null&&!paused?Math.sin(clock*.63+i*.9)*2:0;
+ if(r!==null){ // Missing type has an open, not a darkened, socket.
+  ctx.save();ctx.setLineDash([7,7]);ctx.strokeStyle='#c97960';ctx.lineWidth=2;ctx.strokeRect(sx-bw/2,sy-bh/2,bw,bh);ctx.setLineDash([]);
+  ctx.globalAlpha=.15;text(letters[i],sx,sy+bh*.24,Math.floor(bh*.72),'#f2c7a4','center');ctx.globalAlpha=1;
+  rect(sx-5,sy-bh/2-12,10,16,'#cf6544');ctx.restore();
+ }else{line(sx,mobile?264:221,sx,sy-bh/2+sway,'#94a8a0',1.2);rect(sx-6,sy-bh/2-3+sway,12,6,'#d8a879')}
+ ctx.save();ctx.translate(sx+dx,sy+dy+sway);ctx.rotate(twist);
+ let active=selected===i&&r===null;
+ // Cast relief, extrusion, counterform, pin-marks and unequal roughness.
+ rect(-bw/2+10,-bh/2+12,bw,bh,'#071013');rect(-bw/2,-bh/2,bw,bh,fallen?'#425456':active?'#d7ab83':'#a8b7b2');
+ rect(-bw/2+8,-bh/2+9,bw-17,bh-20,fallen?'#223b42':'#294854');
+ rect(-bw/2+16,-bh/2+19,bw-32,bh-38,'#15282f');hatch(-bw/2+17,-bh/2+20,bw-35,bh-42,14,'rgba(147,177,173,.13)');
+ ctx.strokeStyle=active?'#ffc08b':'#658481';ctx.lineWidth=active?3:1;ctx.strokeRect(-bw/2+15,-bh/2+18,bw-30,bh-36);
+ ctx.textBaseline='middle';text(letters[i],0,13,Math.floor(bh*.7),fallen?'#f0c7a6':inks[i],'center','Georgia,serif');ctx.textBaseline='alphabetic';
+ rect(-bw/2+7,-bh/2+7,9,9,'#ad674a');rect(bw/2-16,bh/2-16,9,9,'#ad674a');
+ text(String(i+1).padStart(2,'0'),bw/2-23,bh/2-26,11,'#e3c3aa','right','ui-monospace,monospace');ctx.restore();
+ if(r!==null){let k=clamp((age-1.37)/.9,0,1);if(k>0){ctx.save();ctx.globalAlpha=.26*ease(k);rect(sx-bw*.65,bed-6,bw*1.3,15,'#eb774c');ctx.restore();
+ // The bed yields a fixed oval impression, then stops: no particles or perpetual energy.
+ ctx.save();ctx.translate(sx,bed+8);ctx.scale(.84+.26*k,.14+.11*k);ctx.globalAlpha=.14+.34*k;ctx.textBaseline='middle';text(letters[i],0,0,bh*.66,'#e77b51','center');ctx.restore();}}
+}
+function proof(){const {W,proofY:py,mobile}=layout;let n=order.length;let centers=mobile?[161,262,363,464,565]:[331,467,603,739,875];
+ for(let j=0;j<5;j++){let x=centers[j],idx=order[j],done=idx!==undefined&&clock-releases[idx]>=1.37;
+  rect(x-48,py-17,96,2,'#9d9987');
+  if(idx===undefined){text('—',x,py+45,55,'#ada58f','center')}else if(done){
+   let alpha=clamp((clock-releases[idx]-1.37)/.75,0,1);
+   ctx.save();ctx.globalAlpha=.45+.55*ease(alpha);text(letters[idx],x,py+49,mobile?76:86,'#243b40','center','Georgia,serif');ctx.restore();
+  }else{text('·',x,py+42,52,'#97624a','center')}
+  text(String(j+1).padStart(2,'0'),x,py-25,10,'#776e5f','center','ui-monospace,monospace');
+ }
+ if(n===5){text('SET IN THE ORDER YOU RELEASED IT',W/2,py+89,11,'#394a45','center','ui-monospace,monospace')}
+}
+function paint(){let {W,H}=layout;ctx.setTransform(1,0,0,1,0,0);rect(0,0,canvas.width,canvas.height,'#0d171b');let z=Math.min(canvas.width/W,canvas.height/H),ox=(canvas.width-W*z)/2,oy=(canvas.height-H*z)/2;ctx.setTransform(z,0,0,z,ox,oy);backdrop();
+ // Vacated sockets appear behind all physical slugs, retaining historical absences.
+ for(let i=0;i<5;i++)if(releases[i]!==null)slug(i);
+ for(let i=0;i<5;i++)if(releases[i]===null)slug(i);
+ proof();}
+function announceText(s){announce.textContent=s}
+function update(){let n=order.length;counter.textContent=String(n).padStart(2,'0')+' / 05 IMPRESSIONS';readout.textContent='THE SECOND READING / '+(n?order.map(i=>letters[i]).join(''):'—');holdButton.textContent=paused?'RESUME ▶':'HOLD ∥';dirty=true;}
+function choose(i){if(document.activeElement instanceof HTMLElement&&document.activeElement.tagName==='BUTTON')document.activeElement.blur();selected=(i+5)%5;announceText('Type '+(selected+1)+' — '+letters[selected]+' selected'+(releases[selected]===null?'.':'; already released.'));dirty=true}
+function release(i=selected){if(releases[i]!==null){announceText('Type '+(i+1)+' has already made its mark.');return}
+ releases[i]=clock;order.push(i);selected=i;update();announceText(letters[i]+' released. The proof now reads '+order.map(j=>letters[j]).join('')+'. '+(5-order.length)+' remain.');}
+function toggle(){paused=!paused;last=0;update();announceText(paused?'Time held.':'The press is moving.');}
+function reset(){releases=Array(5).fill(null);order=[];clock=0;last=0;selected=0;paused=motion.matches;update();announceText('The forme and proof are restored. Five letters hang again.');}
+function hit(e){const rect=canvas.getBoundingClientRect(),W=layout.W,H=layout.H,z=Math.min(rect.width/W,rect.height/H),ox=(rect.width-W*z)/2,oy=(rect.height-H*z)/2;
+ let x=(e.clientX-rect.left-ox)/z,y=(e.clientY-rect.top-oy)/z;
+ for(let i=0;i<5;i++){if(releases[i]!==null)continue;let p=layout.pos[i];if(Math.abs(x-p[0])<layout.bw*.58&&Math.abs(y-p[1])<layout.bh*.55){selected=i;release(i);return}}
+}
+canvas.addEventListener('pointerdown',hit);
+window.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey)return;let k=e.key;
+ if((k==='Enter'||k===' '||k==='Spacebar')&&e.target instanceof Element&&e.target.closest('button'))return;
+ if(['ArrowLeft','ArrowRight','Enter',' ','Spacebar','r','R','1','2','3','4','5'].includes(k))e.preventDefault();
+ if(k==='ArrowLeft')choose(selected-1);else if(k==='ArrowRight')choose(selected+1);else if(k==='Enter')release();
+ else if(k===' '||k==='Spacebar')toggle();else if(k==='r'||k==='R')reset();else if(/^[1-5]$/.test(k))release(Number(k)-1);
+});
+document.getElementById('release').addEventListener('click',()=>release());holdButton.addEventListener('click',toggle);document.getElementById('reset').addEventListener('click',reset);
+window.addEventListener('resize',geometry);if(motion.addEventListener)motion.addEventListener('change',e=>{if(e.matches){paused=true;update();announceText('Reduced motion requested. Time held.')}});
+geometry();update();
+function tick(now){if(!last)last=now;let dt=Math.min(Math.max(now-last,0),40)/1000;last=now;if(!paused)clock+=dt;
+ let active=releases.some(x=>x!==null&&clock-x<2.35);if(dirty||(!paused&&(active||order.length<5))){paint();dirty=false}
+ requestAnimationFrame(tick)}requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
