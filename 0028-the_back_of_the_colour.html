@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>AUTOART 0028 — The Back of the Colour</title>
+<style>
+:root{--paper:#f5ddad;--ink:#192245;--edge:#c45a4b}*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink)}
+body{font-family:Georgia,'Times New Roman',serif;overflow:hidden}
+main{height:100dvh;min-height:550px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 48% 64%,#f8e6bc 0%,#f3d9a8 68%,#edc98e 100%)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+header{position:absolute;z-index:2;top:clamp(20px,3vw,48px);left:clamp(18px,4.8vw,70px);pointer-events:none;max-width:640px}
+.serial,.eyebrow,.hint,.status,.buttons,.folio{font:11px/1.55 ui-monospace,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase}
+.serial{font-weight:bold;color:#a14d42}.eyebrow{margin:10px 0 0;color:#556076}
+h1{font-size:clamp(44px,5.7vw,88px);line-height:.87;font-weight:normal;letter-spacing:-.075em;margin:13px 0 13px}
+h1 em{font-style:italic;color:#bc3f38;font-weight:normal}
+.subtitle{font:clamp(14px,1.3vw,18px)/1.4 Georgia,serif;margin:0;max-width:395px}
+.folio{position:absolute;right:clamp(20px,4.8vw,70px);top:clamp(28px,4vw,55px);text-align:right;color:#8d534b;z-index:2}
+footer{position:absolute;z-index:2;bottom:clamp(18px,3.2vw,44px);left:clamp(18px,4.8vw,70px);right:clamp(18px,4.8vw,70px);display:flex;gap:16px 24px;justify-content:space-between;align-items:end;flex-wrap:wrap}
+.status{font-weight:bold;color:#9b413b}.hint{max-width:650px;letter-spacing:.095em;margin-top:7px;color:#45516b}
+.buttons{display:flex;gap:8px;flex-wrap:wrap}.buttons button{background:#fae9c8;color:#1b2d57;border:1.5px solid #28375c;font:inherit;letter-spacing:.07em;padding:10px 13px;cursor:pointer;min-height:40px}
+.buttons button:hover,.buttons button:focus-visible{background:#203870;color:#ffedd0;outline:2px solid #c74336;outline-offset:3px}
+.buttons button[aria-pressed="true"]{background:#203870;color:#ffe9c6}
+@media(max-width:700px){header{top:22px;left:22px;right:22px;max-width:100%}h1{font-size:clamp(38px,10vw,56px)}.subtitle{font-size:14px;max-width:250px}.folio{display:none}footer{bottom:16px;left:20px;right:20px;gap:8px}.hint{font-size:9px;max-width:345px}.status{font-size:10px}.buttons button{font-size:10px;padding:9px 10px}}
+</style>
+</head>
+<body>
+<main>
+<canvas id="work" role="img" aria-label="A single enormous accordion-folded sheet in cobalt, vermilion, acid yellow and pink, its striped ink image broken across many angular pleats. Drag across the image to unfold or compress it."></canvas>
+<header><div class="serial">AUTOART / 0028 · An experiment in reverse surfaces</div><h1>The Back of<br><em>the Colour</em></h1><p class="subtitle">The image does not disappear when you fold it. It goes somewhere else.</p><p class="eyebrow">One sheet / two sides / no neutral fold</p></header>
+<div class="folio">PLATE VIII / PLEATED MATTER<br>ALL COLOURS REMAIN PRESENT</div>
+<footer><div><div class="status" id="status" role="status" aria-live="polite">EXPOSURE / 64% · SURFACE IN TENSION</div><div class="hint">Drag sideways across the sheet · ← → change exposure · O open · C close · Space hold · R restore</div></div><div class="buttons"><button id="open" type="button">OPEN +</button><button id="close" type="button">CLOSE −</button><button id="hold" type="button" aria-pressed="false">HOLD ∥</button><button id="reset" type="button">RESTORE ↺</button></div></footer>
+</main>
+<script>
+(()=>{'use strict';
+const canvas=document.querySelector('#work'),ctx=canvas.getContext('2d',{alpha:false}),status=document.querySelector('#status'),hold=document.querySelector('#hold');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let exposure=.64,target=.64,paused=reduce,drag=false,last=0,elapsed=0,dirty=true,width=0,height=0,dpr=1;
+const cols=['#2148aa','#eb4d3e','#cfd738','#eaa6a1','#087e91','#dc7133','#a15fb0','#ecb94d','#2d52a6','#ec6c52'];
+function size(){width=innerWidth;height=innerHeight;dpr=Math.min(devicePixelRatio||1,1.75);canvas.width=Math.max(1,Math.round(width*dpr));canvas.height=Math.max(1,Math.round(height*dpr));dirty=true}size();addEventListener('resize',size);
+function polygon(points){ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(...points[i]);ctx.closePath()}
+function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#f5ddad';ctx.fillRect(0,0,width,height);
+ const mobile=width<650,logicalW=1440,logicalH=900;
+ // On portrait screens, turn the sheet into a vertical fold-out; no microscopic miniaturisation.
+ let s;if(mobile){s=Math.min((height-230)/logicalW,width/logicalH)*1.09;ctx.translate(width/2,height*.55);ctx.rotate(Math.PI/2);ctx.scale(s,s);ctx.translate(-logicalW/2,-logicalH/2)}else{s=Math.max(width/logicalW,height/logicalH);ctx.translate((width-logicalW*s)/2,(height-logicalH*s)/2);ctx.scale(s,s)}
+ const t=elapsed,open=exposure,N=10,span=365+760*open,left=750-span/2,step=span/N;
+ // Registration lines are fixed to the page, not generated on every input.
+ if(!mobile){ctx.strokeStyle='rgba(31,55,79,.17)';ctx.lineWidth=1;
+ for(let y=340;y<786;y+=33){ctx.beginPath();ctx.moveTo(84,y);ctx.lineTo(1349,y);ctx.stroke()}
+ ctx.strokeStyle='rgba(151,66,51,.35)';ctx.lineWidth=2;ctx.strokeRect(61,316,1318,464);
+ ctx.fillStyle='#965343';ctx.font='11px monospace';ctx.fillText('THE IMAGE // FACE A / FACE B',73,334);ctx.fillText('OPEN / CLOSE IS NOT ERASE / RESTORE',1035,764);}
+ const points=[];for(let i=0;i<=N;i++){
+  let wave=(1-open)*Math.sin(i*2.5+t*.17)*30,alt=i%2?1:-1;
+  points.push({x:left+i*step,yt:365+alt*37+wave*.5+Math.sin(i*.9)*10,yb:710-alt*32+wave*.5+Math.cos(i*.81)*13});
+ }
+ // A second, softer cast outline reveals the sheet as one connected body.
+ ctx.save();ctx.shadowColor='rgba(35,33,54,.5)';ctx.shadowBlur=44;ctx.shadowOffsetX=17;ctx.shadowOffsetY=30;
+ polygon(points.map(p=>[p.x,p.yt]).concat(points.slice().reverse().map(p=>[p.x,p.yb])));ctx.fillStyle='#54415b';ctx.fill();ctx.restore();
+ for(let i=0;i<N;i++){
+  const a=points[i],b=points[i+1],face=[[a.x,a.yt],[b.x,b.yt],[b.x,b.yb],[a.x,a.yb]],mid=(a.x+b.x)/2;
+  ctx.save();polygon(face);ctx.clip();ctx.fillStyle=cols[i];ctx.fillRect(a.x-4,185,step+10,630);
+  // Light and dark alternate on the two faces of the accordion.
+  let g=ctx.createLinearGradient(a.x,0,b.x,0);
+  if(i%2){g.addColorStop(0,'rgba(13,27,67,.58)');g.addColorStop(.6,'rgba(28,12,46,.03)');g.addColorStop(1,'rgba(255,240,189,.30)')}
+  else{g.addColorStop(0,'rgba(255,248,190,.42)');g.addColorStop(.52,'rgba(255,247,211,.03)');g.addColorStop(1,'rgba(9,20,61,.51)')}
+  ctx.fillStyle=g;ctx.fillRect(a.x-2,190,step+4,600);
+  // One printed contour crosses the whole sheet, repeatedly occluded by real creases.
+  ctx.strokeStyle='rgba(21,26,64,.88)';ctx.lineWidth=87;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(170,652);ctx.bezierCurveTo(422,350,845,300,1360,568);ctx.stroke();
+  ctx.strokeStyle='rgba(255,247,214,.93)';ctx.lineWidth=17;ctx.beginPath();ctx.moveTo(170,650);ctx.bezierCurveTo(422,350,845,300,1360,568);ctx.stroke();
+  // Fixed, offset engraving curves connect ink to handling rather than to screen effects.
+  ctx.strokeStyle='rgba(255,247,224,.5)';ctx.lineWidth=2;for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(760,500,180+k*93,78+k*51,-.32,0,Math.PI*2);ctx.stroke()}
+  for(let x=Math.ceil(a.x/13)*13;x<b.x;x+=13)for(let y=272;y<733;y+=13){
+   const strength=(Math.sin(x*13.91+y*4.77)*43758.5453)%1;if(strength>.52){ctx.fillStyle='rgba(17,23,62,.13)';ctx.fillRect(x+Math.sin(y)*2,y,2,2)}
+  }
+  ctx.strokeStyle=i%2?'rgba(17,24,51,.58)':'rgba(250,233,182,.78)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(b.x,b.yt);ctx.lineTo(b.x,b.yb);ctx.stroke();
+  ctx.fillStyle=i%2?'#f8dec1':'#132d63';ctx.font='bold 11px monospace';ctx.save();ctx.translate(mid,(a.yb+b.yb)/2-20);ctx.rotate(-Math.PI/2);ctx.fillText(String(i+1).padStart(2,'0')+' / REVERSE',0,0);ctx.restore();ctx.restore();
+ }
+ // Side edge and little assembly ticks are deliberately separate from the pigment.
+ ctx.strokeStyle='#1c2853';ctx.lineWidth=4;polygon(points.map(p=>[p.x,p.yt]).concat(points.slice().reverse().map(p=>[p.x,p.yb])));ctx.stroke();
+ ctx.lineWidth=1.5;for(let i=0;i<=N;i++){let p=points[i];ctx.beginPath();ctx.moveTo(p.x,p.yt-8);ctx.lineTo(p.x,p.yt-24);ctx.moveTo(p.x,p.yb+9);ctx.lineTo(p.x,p.yb+24);ctx.stroke()}
+ ctx.fillStyle='#243361';ctx.font='12px monospace';if(!mobile)ctx.fillText('A FOLD IS A DECISION ABOUT WHICH COLOUR COUNTS AS THE FRONT.',160,795);
+}
+function readout(){status.textContent='EXPOSURE / '+Math.round(target*100)+'% · '+(paused?'STILL SURFACE':'SURFACE IN TENSION');hold.setAttribute('aria-pressed',paused);hold.textContent=paused?'RESUME ▶':'HOLD ∥'}
+function set(v){target=Math.max(.08,Math.min(1,v));if(paused)exposure=target;dirty=true;readout()}
+function toggle(){paused=!paused;readout();dirty=true}
+function restore(){target=exposure=.64;elapsed=0;paused=reduce;readout();dirty=true}
+// A gesture changes a global accordion, not a collection of independently movable tiles.
+function gesture(e){const r=canvas.getBoundingClientRect();if(width<650){set(.08+.92*(1-(e.clientY-r.top)/r.height))}else{set(.08+.92*(e.clientX-r.left)/r.width)}}
+canvas.addEventListener('pointerdown',e=>{drag=true;canvas.setPointerCapture(e.pointerId);gesture(e)});
+canvas.addEventListener('pointermove',e=>{if(drag)gesture(e)});
+function stop(){drag=false}canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);canvas.addEventListener('lostpointercapture',stop);
+document.querySelector('#open').addEventListener('click',()=>set(target+.16));document.querySelector('#close').addEventListener('click',()=>set(target-.16));hold.addEventListener('click',toggle);document.querySelector('#reset').addEventListener('click',restore);
+addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA'].includes(e.target.tagName)||e.target.tagName==='BUTTON')return;
+const k=e.key;if(['ArrowRight','ArrowLeft','o','O','c','C',' ','r','R'].includes(k))e.preventDefault();if(k==='ArrowRight'||k.toLowerCase()==='o')set(target+.12);else if(k==='ArrowLeft'||k.toLowerCase()==='c')set(target-.12);else if(k===' ')toggle();else if(k.toLowerCase()==='r')restore()});
+function tick(now){if(!last)last=now;let dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!paused){let diff=target-exposure;exposure+=diff*Math.min(1,dt*7);elapsed+=dt*.6;if(Math.abs(diff)>.0001)dirty=true}
+if(!paused||dirty){draw();dirty=false}requestAnimationFrame(tick)}
+readout();requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
