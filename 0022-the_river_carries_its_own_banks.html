@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>AUTOART 0022 — The River Carries Its Own Banks</title>
+<style>
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#f2e3c5;color:#393b35}
+body{font-family:Georgia,'Times New Roman',serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+header{position:fixed;top:clamp(22px,5vh,52px);left:clamp(18px,4.2vw,65px);pointer-events:none;max-width:360px;z-index:2}
+.kicker{font:700 10px/1.5 system-ui,sans-serif;letter-spacing:.24em;color:#bd4836}
+h1{font-size:clamp(38px,4.5vw,68px);font-weight:400;line-height:.92;letter-spacing:-.075em;margin:15px 0 0;text-wrap:balance;color:#353d3c}
+h1 em{font-weight:400;font-style:italic;color:#d45338}
+.deck{font:500 12px/1.5 system-ui,sans-serif;margin-top:23px;max-width:260px;letter-spacing:.01em;color:#695b4c}
+footer{position:fixed;bottom:clamp(18px,4vh,40px);left:clamp(18px,4.2vw,65px);right:clamp(18px,4.2vw,65px);pointer-events:none;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;z-index:2;font:700 10px/1.7 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#5b4b3f}
+footer span:last-child{text-align:right;color:#54666b}
+#status{position:absolute;width:1px;height:1px;clip-path:inset(50%);white-space:nowrap;overflow:hidden}
+@media(max-width:650px){header{top:14px;max-width:235px;background:linear-gradient(90deg,#f2e3c5ef,#f2e3c5bb 75%,transparent);padding:4px 7px 10px 0}h1{font-size:clamp(32px,9vw,47px);margin-top:8px}.deck{font-size:10px;line-height:1.4;margin-top:12px;max-width:165px}footer{font-size:9px;line-height:1.45;display:block;bottom:7px;left:7px;right:7px;background:#f2e3c5ee;border-top:1px solid #a8604770;padding:8px 11px 5px}footer span{display:block}footer span:last-child{text-align:left;margin-top:4px}}
+</style>
+</head>
+<body>
+<canvas id="river" tabindex="0" role="img" aria-label="A large ink-blue river winds through orange and cream fields. Pieces of the banks float against the current like migrating islands. Press or click near either bank to tear a new island into the water."></canvas>
+<header><div class="kicker">AUTOART / 0022 &nbsp; — &nbsp; THE CURRENT IS UPSTREAM</div><h1>The River<br>Carries Its<br><em>Own Banks</em></h1><div class="deck">No shore is quite permanent.<br>The water keeps its own geography.</div></header>
+<footer><span>Click a bank to release a piece of land</span><span>↑ ↓ choose latitude · Enter release · Space stillness · R begin again</span></footer>
+<div id="status" role="status" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const canvas=document.querySelector('#river'),ctx=canvas.getContext('2d',{alpha:false}),out=document.querySelector('#status');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PI=Math.PI,TAU=PI*2;
+const C={paper:'#f2e3c5',ink:'#293b40',land:'#dd8d62',terra:'#b94f39',gold:'#e5b86e',water:'#18536d',deep:'#123e59',foam:'#77d0c2',blue:'#327f97',dark:'#143b50'};
+let W=0,H=0,dpr=1,s=1,tx=0,ty=0,t=0,last=0,raf=0,paused=reduced,latitude=450,showLatitude=false,pointer={x:720,y:450,active:false};
+let released=[],releaseCount=0;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),smooth=(v)=>{v=clamp(v,0,1);return v*v*(3-2*v)};
+function hash(n){n=(n^61)^(n>>>16);n=Math.imul(n,9);n^=n>>>4;n=Math.imul(n,0x27d4eb2d);n^=n>>>15;return (n>>>0)/4294967296}
+function line(x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+function center(y){return 742+245*Math.sin(y*.0057+.64)+43*Math.sin(y*.014+2.8)}
+function halfWidth(y){return 164+29*Math.sin(y*.010+1.3)+13*Math.cos(y*.021)}
+function bend(y){return pointer.active?Math.exp(-(((y-pointer.y)/150)**2))*Math.sin(t*.65)*12:0}
+function shore(y,side){return center(y)+bend(y)+side*halfWidth(y)}
+function polygon(points){ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath()}
+function riverPolygon(expand=0){ctx.beginPath();for(let y=-65;y<=965;y+=8){const x=shore(y,-1)-expand;y===-65?ctx.moveTo(x,y):ctx.lineTo(x,y)}for(let y=965;y>=-65;y-=8)ctx.lineTo(shore(y,1)+expand,y);ctx.closePath()}
+function paper(){ctx.fillStyle=C.paper;ctx.fillRect(0,0,1440,900);
+for(let i=0;i<1100;i++){const x=hash(i*29+13)*1440,y=hash(i*31+71)*900;ctx.fillStyle=i%5===0?'#c16c495c':'#ad85652b';ctx.fillRect(x,y,hash(i*17+5)*2+.4,hash(i*23+31)*1.4+.3)}
+// Topographic printed fields: large terrestrial masses, not a repeated decorative lattice.
+ctx.save();ctx.strokeStyle='#a45c483c';ctx.lineWidth=2;
+for(let j=0;j<7;j++){ctx.beginPath();for(let y=-80;y<=980;y+=18){let x=shore(y,-1)-50-j*78-30*Math.sin(y*.008+j*.5);y===-80?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke()}
+for(let j=0;j<7;j++){ctx.beginPath();for(let y=-80;y<=980;y+=18){let x=shore(y,1)+60+j*88+30*Math.sin(y*.007+j*.6);y===-80?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke()}
+ctx.restore();
+// Planted marks follow the contours of the fields but stop at the banks.
+for(let i=0;i<110;i++){const y=hash(i*23+7)*860+20,side=i%2?-1:1;const x=shore(y,side)+side*(28+hash(i*31)*300);ctx.save();ctx.translate(x,y);ctx.rotate(side*(.22+.5*Math.sin(y*.013)));line(-8,1,8,-1,'#9f4c399c',1.7);line(-2,-4,5,4,'#9f4c3970',1);ctx.restore()}
+}
+function drawWater(){riverPolygon(19);ctx.fillStyle='#9c583d45';ctx.fill();riverPolygon(8);ctx.fillStyle='#dda16f';ctx.fill();riverPolygon();ctx.fillStyle=C.water;ctx.fill();
+ctx.save();riverPolygon();ctx.clip();
+for(let j=0;j<9;j++){ctx.beginPath();for(let y=-80;y<=980;y+=9){const x=center(y)+(-.83+j*.21)*halfWidth(y)+Math.sin(y*.012+j*.6+t*.28)*12; y===-80?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.strokeStyle=j%3===0?'#67bdba48':j%3===1?'#071f3970':'#63b4ab27';ctx.lineWidth=10+(j%3)*6;ctx.lineCap='round';ctx.stroke()}
+for(let i=0;i<340;i++){const y=(hash(i*47+15)*1100-100-t*(10+hash(i*13)*17)%1100+2200)%1100-100;const x=center(y)+(hash(i*19+11)*1.75-.875)*halfWidth(y);ctx.fillStyle=i%7===0?'#e4ddb74e':'#78d7c276';ctx.beginPath();ctx.ellipse(x,y,1+hash(i*17)*2,4+hash(i*43)*8,.1,0,TAU);ctx.fill()}
+ctx.restore();
+for(const side of [-1,1]){ctx.beginPath();for(let y=-60;y<=960;y+=6){const x=shore(y,side);y===-60?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.strokeStyle=C.terra;ctx.lineWidth=5;ctx.stroke();ctx.strokeStyle='#f4c38a';ctx.lineWidth=1.5;ctx.stroke()}
+}
+function landScrap(seed,w=1){const wid=(55+hash(seed*17)*41)*w,hei=(25+hash(seed*27)*26)*w;const n=13;let poly=[];
+for(let i=0;i<n;i++){const a=(i/n)*TAU;const r=.78+.31*hash(seed*29+i*317);poly.push([Math.cos(a)*wid*r,Math.sin(a)*hei*r])}
+ctx.save();ctx.translate(9,10);polygon(poly);ctx.fillStyle='#07395476';ctx.fill();ctx.restore();
+polygon(poly);ctx.fillStyle=[C.terra,C.gold,'#df9868','#e3ac73','#b4654b'][seed%5];ctx.fill();ctx.strokeStyle='#7a392fc0';ctx.lineWidth=2.1;ctx.stroke();
+ctx.save();polygon(poly);ctx.clip();for(let i=0;i<6;i++){const x=-wid*1.2+i*wid*.43;line(x,-hei*1.7,x+wid*.75,hei*1.5,'#8d4b3899',1.6)}ctx.restore();
+// Each torn country retains a tiny crop line and a dark plant: scale cues in an impossible geology.
+const k=hash(seed*37),plantX=(-.3+k*.55)*wid;line(plantX,7,plantX,-hei*.49,C.ink,2.8);for(let j=0;j<3;j++){let yy=-hei*.5+j*5;line(plantX,yy,plantX-(9-j*2),yy-8,C.ink,1.9);line(plantX,yy+2,plantX+9-j*2,yy-8,C.ink,1.7)}
+}
+const initial=[{seed:7,y:185,dx:-61,size:.98,speed:7},{seed:4,y:302,dx:61,size:.77,speed:12},{seed:18,y:412,dx:-34,size:1.35,speed:5},{seed:14,y:540,dx:79,size:.80,speed:9},{seed:9,y:624,dx:-58,size:.60,speed:11},{seed:21,y:734,dx:24,size:1.23,speed:7},{seed:12,y:838,dx:-35,size:.77,speed:9}];
+function established(){for(const p of initial){const y=((p.y-t*p.speed+1040)%1040)-65;const x=center(y)+p.dx+Math.sin(t*.5+p.seed)*9;
+ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(t*.17+p.seed)*.10-.10);landScrap(p.seed,p.size);ctx.restore()}}
+function newcomers(){for(const p of released){const age=t-p.born;if(age<0||age>20)continue;const f=smooth(age/2.7);const y=p.y-age*(14+p.seed%6);const from=shore(p.y,p.side)+p.side*4;const x=from*(1-f)+(center(y)+p.side*(20+22*Math.sin(age*.5)))*f;const opacity=1-smooth((age-15)/5);ctx.save();ctx.globalAlpha=opacity;ctx.translate(x,y);ctx.rotate(p.side*.20+age*.035*p.side);landScrap(p.seed,.72+.14*Math.sin(age*.35));ctx.restore();
+if(age<4){ctx.save();ctx.globalAlpha=(1-smooth(age/4))*.8;ctx.translate(from,p.y);ctx.scale(p.side,1);ctx.strokeStyle='#f4c38a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,25,Math.PI*.45,Math.PI*1.5);ctx.stroke();ctx.restore()}}
+}
+function foam(){for(let i=0;i<22;i++){const y=((i*61-t*(9+i%4)*1.25+1500)%1080)-90;const side=i%2?-1:1,x=shore(y,side)-side*(12+i%3*6);ctx.beginPath();ctx.arc(x,y,8+i%4*5,side>0?1.5:4.5,side>0?3.5:6.5);ctx.strokeStyle='#9ce4c285';ctx.lineWidth=2;ctx.stroke()}}
+function margin(){ctx.save();ctx.textAlign='right';ctx.fillStyle='#96513d';ctx.font='bold 11px system-ui';ctx.fillText('THE COAST IS NOT AN ADDRESS',1369,101);
+ctx.translate(1362,678);ctx.rotate(-PI/2);ctx.font='bold 10px system-ui';ctx.fillStyle='#a65c47b0';ctx.fillText('AN INDEX OF PLACES THAT MOVED',0,0);ctx.restore();
+line(1180,132,1370,132,'#a15b4680',1.4);line(55,774,284,774,'#a15b4660',1.4);ctx.fillStyle='#a15b46';ctx.font='bold 11px system-ui';ctx.fillText('UPSTREAM  ↑',71,801);
+// A keyboard latitude marker, never a permanent part of the landscape.
+if(showLatitude){const x=shore(latitude,releaseCount%2?1:-1);ctx.strokeStyle='#fff1bedc';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,latitude,18,0,TAU);ctx.stroke();line(x-28,latitude,x+28,latitude,'#fff1be',1.5);line(x,latitude-27,x,latitude+27,'#fff1be',1.5)}}
+function paint(){if(!W)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=C.paper;ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(tx,ty);ctx.scale(s,s);paper();drawWater();foam();established();newcomers();margin();ctx.restore()}
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,1.8);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);s=Math.max(W/1440,H/900*(W<700?.87:1));tx=(W-1440*s)*.5;ty=(H-900*s)*.5;paint();wake()}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(tick)}}
+function tick(now){raf=0;const dt=clamp((now-last)/1000,0,.055);last=now;if(!paused){t+=dt;released=released.filter(p=>t-p.born<20)}paint();if(!paused)wake()}
+function release(x,y){const side=x<center(y)?-1:1,by=clamp(y,100,845);released.push({seed:120+releaseCount*13,y:by,side,born:t});if(released.length>8)released.shift();releaseCount++;out.textContent=`The river has carried away another piece of the ${side<0?'left':'right'} bank.`;paint();wake()}
+function point(e){return {x:(e.clientX-tx)/s,y:(e.clientY-ty)/s}}
+canvas.addEventListener('pointermove',e=>{let p=point(e);pointer={...p,active:true};if(paused)paint()},{passive:true});
+canvas.addEventListener('pointerleave',()=>{pointer.active=false;if(paused)paint()});
+canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;let p=point(e);release(p.x,p.y)},{passive:true});
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','enter',' ','r'].includes(k))e.preventDefault();if(k==='arrowup'||k==='arrowdown'){latitude=clamp(latitude+(k==='arrowup'?-65:65),115,810);showLatitude=true;out.textContent=`Bank latitude ${Math.round(latitude)} selected.`;paint()}else if(k==='enter'){const side=releaseCount%2?-1:1;release(shore(latitude,side)+side*40,latitude)}else if(k===' '){paused=!paused;out.textContent=paused?'The river rests.':'The river flows upstream again.';paint();wake()}else if(k==='r'){t=0;released=[];releaseCount=0;showLatitude=false;latitude=450;pointer.active=false;paused=reduced;out.textContent='The original geography has been restored.';paint();wake()}});
+addEventListener('resize',resize,{passive:true});resize();wake();
+})();
+</script>
+</body></html>
