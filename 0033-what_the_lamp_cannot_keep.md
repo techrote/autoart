@@ -1,0 +1,32 @@
+# AUTOART 0033 — What the Lamp Cannot Keep
+
+**Dominant artistic priority:** negative evidence — make the viewer's attention uncover something only by *leaving*, rather than showing an immediate bright mark at the point of contact.  
+**Relationship:** oppositional to the sole complete numbered frontier, `0032-a_horizon_in_the_glass`, on starting authoritative `main` `feba7f5be47ba3d25b5ab2db3528f10893755855` (11 November 2026). The separately proposed 0025 alternate edition is a noncanonical edition, not a frontier work, required critique or serial blocker.
+
+## The work
+
+An empty green-black dance floor is engraved with diagonal parquet planks, a double brass border and the ghost of a circular measuring instrument. A large oblique pool of amber light rests off centre. Nine pairs of small dark soles are present before the viewer does anything. Their forms are conspicuous in the surrounding shade but almost lost beneath the lamp. Moving the lamp leaves more paired traces in its wake. Lifting the lamp reveals them together. The marks are evidence of dancers never represented by bodies: the light can show where somebody might have stood, but cannot keep the impression while it occupies that place.
+
+The composition avoids a theatrical stage or picturesque sky. Its material is a floor observed from above, neither an actual shoe simulation nor a forensic claim. The pale engraved sole-rims are deliberately handmade rather than icons. Brass rings and measured borders tempt a reading of a diagram, but their circle cannot contain the crooked course of footsteps. The initial state is already an illustration, with a deliberate gap between the staggered left trail and the light on the right. This is not a puzzle about finding a hidden dancer.
+
+The predecessor's first click puts bright, accumulating geometry directly on a framed scenic view. This work replaces that one-to-one reaction with displacement: a viewer moves the source of illumination, and the marks are least visible where the source currently points. The amber light on mineral green is meant to have bodily warmth without quoting 0032's peach sun, blue window or tinted fractures. Earlier AUTOART floor and theatre pieces were considered as background, but this is neither the waiting audience of 0027 nor the missing-shadows swap of 0021: the authored absence is the dancer, not a person or object whose shadow is incorrectly assigned.
+
+## Encounter
+
+Drag across the floor to carry the lamp. The lamp records steps at bounded spatial intervals along the route; slow continuous movement accumulates distance, so the result does not depend on huge pointer jumps. Arrow keys nudge the lamp and write along its passage; **Enter** makes a deliberate extra step. **Walk the Beam** or **W** stages a short finite eleven-position itinerary, leaving one new sole at each location. **Lift the Lamp** or **L** removes the light without removing any marks; lower it to expose the selective wash again. **Begin Again** or **R** clears the newly written steps, restores the lamp and retains the original nine archival pairs. Status text announces the state. All three controls are real keyboard-focusable buttons.
+
+The light does not actually delete ink. The drawing attenuates the visibility of each sole according to its current distance from an elliptical lamp centre. That is the artwork's single visual deceit: what looks like evidence emerging from darkness is in fact a stored trace made more legible outside the beam. The viewer is not graded, scored or asked to complete a path.
+
+## Construction
+
+One UTF-8 HTML file contains all markup, style and inline Canvas 2D code. The plank arrangement, scattered grain, decorative frame and nine initial sole pairs use fixed seeded geometry. The lamp is a pair of bounded radial gradients; all marks are authored shoe-sole silhouettes. At most 66 new marks plus 18 archival marks exist simultaneously. A walk lasts approximately three seconds at ordinary motion preference, then stops scheduling frames. Other interventions schedule at most one redraw; there is no perpetual idle animation, storage, network access, audio, telemetry, image download or external dependency. Device-pixel ratio is capped at 1.6. On narrow viewports the artwork selects a closer crop, shifts the light toward the visible centre and reflows the controls without horizontal scrolling. At reduced-motion preference the Walk action resolves directly into its settled composition rather than animating.
+
+## Validation — 11 November 2026
+
+- Node 22 parsed the exact inline script; complete HTML loaded without page exceptions or external requests in system Chromium at **1440 × 900** and **390 × 844**. Actual opening, post-walk and lamp-lift screenshots were captured and visually inspected at both sizes. The screenshots were temporary validation artifacts, not gallery works.
+- Real click on **Walk the Beam** changed the Canvas and left fifteen reported pairs (the original nine plus eleven individually authored soles, rounded up to six additional pairs). **Lift the Lamp** set its pressed state to `true`, and **Begin Again** restored the nine starting pairs. Horizontal document overflow was absent at both sizes. ArrowRight, Enter and the L shortcut were exercised after the reset.
+- A pointer drag, replay, keyboard-focus cycle and reduced-motion path should be retested by the next reviewer on a physical local file. In this managed Chromium environment direct `file://` navigation fails with `ERR_BLOCKED_BY_ADMINISTRATOR`; successful tests used the unchanged HTML inserted as document content, not a successful OS-local-file launch. Physical Firefox remains unqualified.
+
+## Limits
+
+The foot impressions are individual flat soles rather than anatomically detailed pairs of shoes. The prewritten nine pairs are staged art marks, not reconstructible evidence of a recorded dance. The fixed itinerary intentionally accumulates a clustered route rather than an optimally legible parade; lifting the lamp makes that clustering plain. The beam is an optical illustration, not lighting simulation. On a narrow device the ceremonial circle and left tail are cropped so the present light retains priority. This piece is left **without a critique of itself** for a subsequent frontier author.
