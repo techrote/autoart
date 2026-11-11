@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AUTOART 0037 — The Gap Goes First</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#eee7d7;color:#182d34}
+body{font-family:Georgia,'Times New Roman',serif} main{position:relative;min-height:620px;height:100svh;overflow:hidden;background:#efe9da}
+svg{display:block;width:100%;height:100%;touch-action:none;outline:none;cursor:crosshair}
+svg:focus-visible{outline:3px solid #ae4336;outline-offset:-5px}
+.mast{position:absolute;left:clamp(18px,4.4vw,78px);top:clamp(24px,5.5vh,58px);width:min(290px,34vw);pointer-events:none;z-index:2}
+.edition{font:700 11px/1.7 ui-monospace,Consolas,monospace;letter-spacing:.15em;color:#ac473b}
+h1{font:400 clamp(43px,5.6vw,84px)/.93 Georgia,serif;letter-spacing:-.07em;margin:34px 0 17px;max-width:310px}
+.mast p{font:12px/1.7 ui-monospace,Consolas,monospace;letter-spacing:.014em;max-width:235px;color:#43575b}
+.rail{position:absolute;left:clamp(18px,4.4vw,78px);right:clamp(18px,4.4vw,78px);bottom:clamp(16px,3vh,29px);display:flex;align-items:end;gap:24px;justify-content:space-between;z-index:2;pointer-events:none}
+.readout{font:700 11px/1.6 ui-monospace,Consolas,monospace;letter-spacing:.075em;background:#eee7dce7;padding:10px 12px;border-left:4px solid #b84939;color:#233b41;max-width:360px}
+.hint{font:10px/1.5 ui-monospace,Consolas,monospace;color:#354d50;max-width:310px;margin:8px 0 0}
+.actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end;pointer-events:auto}
+button{background:#19363d;color:#f5e6cf;border:1px solid #19363d;min-height:44px;padding:11px 15px;font:700 11px/1 ui-monospace,Consolas,monospace;letter-spacing:.07em;cursor:pointer}
+button:hover,button:focus-visible{background:#ad4938;color:#fff6e6;outline:2px solid #ad4938;outline-offset:3px}
+button:disabled{opacity:.4;cursor:default}
+#field .gate{cursor:ns-resize;outline:none}#field .gate:focus-visible .outline{stroke:#ffb57d;stroke-width:4}
+#field .gate.selected .outline{stroke:#de654c;stroke-width:2.5}
+@media(max-width:690px){
+ main{min-height:650px;height:100svh}
+ svg{position:absolute;top:175px;height:calc(100% - 342px);min-height:265px}
+ .mast{left:18px;top:17px;width:calc(100% - 36px)}
+ .edition{font-size:9px;letter-spacing:.08em}
+ h1{font-size:42px;line-height:.92;max-width:none;margin:11px 0 9px;letter-spacing:-.06em}
+ .mast p{font-size:10px;line-height:1.45;max-width:none;margin:0}
+ .rail{left:0;right:0;bottom:0;height:167px;display:flex;flex-direction:column;gap:7px;justify-content:space-between;align-items:stretch;background:#eee7da;padding:12px 14px;border-top:1px solid #b3aea0}
+ .readout{font-size:10px;letter-spacing:.03em;padding:6px 9px;max-width:none}
+ .hint{font-size:9px;line-height:1.4;max-width:none;margin:5px 0 0}
+ .actions{width:100%;max-width:none;gap:6px;flex-wrap:nowrap}
+ button{flex:1;font-size:10px;min-height:41px;padding:9px 6px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+<svg id="field" viewBox="0 0 1300 800" preserveAspectRatio="xMidYMid slice" tabindex="0" role="group" aria-label="Fifteen dark upright gates stand in a paper hall. A narrow red passage crosses them. Select and lift a gate to displace the passage; neighbouring gaps respond. Arrow keys choose and move gates, R restores and U undoes.">
+<defs>
+ <linearGradient id="page" x1="0" x2="0.8" y1="0" y2="1"><stop stop-color="#f6f0df"/><stop offset="1" stop-color="#d9d6c7"/></linearGradient>
+ <pattern id="fibre" patternUnits="userSpaceOnUse" width="31" height="33"><path d="M4 10l5 -3M18 29l2 -7M29 10l-3 2" stroke="#4d6362" stroke-width=".5" opacity=".16"/></pattern>
+ <pattern id="groove" patternUnits="userSpaceOnUse" width="8" height="8"><path d="M1 0v8M4 0v8" stroke="#b8c9b8" stroke-width=".35" opacity=".16"/></pattern>
+</defs>
+<rect width="1300" height="800" fill="url(#page)"/><rect width="1300" height="800" fill="url(#fibre)"/>
+<!-- Registration marks: a stable architectural grid, unlike the moving void. -->
+<g stroke="#7a8884" fill="none" opacity=".29" stroke-width="1"><path d="M328 98H1266M328 712H1266M328 98V712M1266 98V712"/><path d="M328 146H1266M328 665H1266" stroke-dasharray="2 18"/></g>
+<g id="ticks" stroke="#b0afa0" fill="none"></g>
+<g id="columns"></g>
+<g id="seam" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+<g id="cursor" fill="none"></g>
+<g aria-hidden="true" font-family="monospace" font-size="11" letter-spacing="1.5" fill="#536564"><text x="328" y="84">FIG. 37 / NEGATIVE TRANSFER</text><text x="1266" y="84" text-anchor="end">NOT A CORRIDOR</text><text x="328" y="748">THE OPENING MOVES / THE MATERIAL STAYS</text><text x="1266" y="748" text-anchor="end">00 — 15</text></g>
+</svg>
+<div class="mast"><span class="edition">AUTOART / 0037<br>STUDY IN SHARED SPACE</span><h1>The Gap<br>Goes First</h1><p>One opening cannot move alone.<br>Take hold of the red passage. The other gates answer.</p></div>
+<div class="rail"><div><div class="readout" id="status" role="status" aria-live="polite">FIFTEEN GATES / ONE UNCLAIMED PASSAGE</div><p class="hint">Drag a gap vertically · ← → select · ↑ ↓ move · Enter disturb · U undo · R restore</p></div><div class="actions"><button id="disturb" type="button">DISTURB</button><button id="undo" type="button" disabled>UNDO</button><button id="reset" type="button">RESTORE</button></div></div>
+</main>
+<script>
+(()=>{'use strict';
+const NS='http://www.w3.org/2000/svg',N=15,X=339,P=60,W=54,HEIGHT=800;
+const svg=document.getElementById('field'),cols=document.getElementById('columns'),seam=document.getElementById('seam'),ticks=document.getElementById('ticks'),cursor=document.getElementById('cursor'),status=document.getElementById('status');
+const bDisturb=document.getElementById('disturb'),bUndo=document.getElementById('undo'),bReset=document.getElementById('reset');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const base=Array.from({length:N},(_,i)=>365+44*Math.sin(i*.59)+18*Math.sin(i*1.41));
+let target=base.slice(),current=base.slice(),selected=7,steps=0,history=[],raf=0,active=-1,lastPointerY=0,dragged=false;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function el(tag,attrs={},parent){let e=document.createElementNS(NS,tag);for(let [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(parent)parent.appendChild(e);return e}
+const groups=base.map((_,i)=>{
+ const x=X+i*P, g=el('g',{class:'gate',role:'button',tabindex:'0','aria-label':`Gate ${i+1} of ${N}; drag vertically or use arrow keys to shift its opening`},cols);
+ const top=el('path',{fill:i%3===0?'#19353c':(i%3===1?'#243f44':'#1e383d')},g),bottom=el('path',{fill:i%3===2?'#22383d':'#193239'},g);
+ const grain=el('path',{stroke:'#78908a','stroke-width':'.55',opacity:'.35',fill:'none'},g);
+ const edge=el('path',{class:'outline',stroke:'#53655f','stroke-width':'1.2',fill:'none'},g);
+ const number=el('text',{x:x+W/2,y:690,'text-anchor':'middle',fill:'#c9c6ad','font-family':'monospace','font-size':'10','letter-spacing':'1'},g);number.textContent=String(i+1).padStart(2,'0');
+ const track=el('rect',{x:x-3,y:'127',width:W+6,height:565,fill:'transparent'},g);
+ g.addEventListener('click',()=>{if(!dragged){select(i);pulse(i, i%2?50:-50)}dragged=false});
+ g.addEventListener('focus',()=>select(i));
+ g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();pulse(i,i%2?48:-48)}});
+ return {g,x,top,bottom,edge,grain,track};
+});
+const line=el('path',{stroke:'#b74b3d','stroke-width':'5'},seam),aura=el('path',{stroke:'#f5a679','stroke-width':'1.5',opacity:'.85'},seam);
+const dots=Array.from({length:N},()=>el('circle',{r:'4.5',fill:'#e6ab6c',stroke:'#153239','stroke-width':'2'},seam));
+const brackets=Array.from({length:N},()=>el('path',{stroke:'#b84b3d','stroke-width':'2'},cursor));
+for(let i=0;i<N;i++){let x=X+i*P+W/2;el('path',{d:`M${x} 99v-11M${x} 712v11`,'stroke-width':i%3===0?'2':'.8'},ticks)}
+function select(i){selected=clamp(i,0,N-1);groups.forEach((a,j)=>a.g.classList.toggle('selected',j===selected));updateStatus()}
+function updateStatus(){const offs=Math.round(target[selected]-base[selected]);status.textContent=`GATE ${String(selected+1).padStart(2,'0')} / ${N}   ${offs>=0?'+':''}${offs} UNITS   ·   ${steps} TRANSFER${steps===1?'':'S'}`;bUndo.disabled=!history.length}
+function save(){history.push({target:target.slice(),steps});if(history.length>24)history.shift()}
+function apply(i,delta,record=true,count=true){const prior=target[i];let next=clamp(prior+delta,205,558),d=next-prior;if(Math.abs(d)<.01)return;if(record)save();
+ target[i]=next;
+ // The neighbouring openings take up opposite displacements, conserving the gesture's visual area locally.
+ for(let j=0;j<N;j++)if(j!==i){let dist=Math.abs(i-j);let influence=dist===1?-.37:dist===2?-.13:dist===3?.055:0;if(influence)target[j]=clamp(target[j]+influence*d,205,558)}
+ if(count)steps++;select(i);if(reduced){current=target.slice();render()}else begin();updateStatus()}
+function pulse(i,d){apply(i,d)}
+function reset(){if(steps)save();target=base.slice();steps=0;if(reduced){current=target.slice();render()}else begin();updateStatus()}
+function undo(){if(!history.length)return;let h=history.pop();target=h.target;steps=h.steps;if(reduced){current=target.slice();render()}else begin();updateStatus()}
+function render(){let points=[];
+ for(let i=0;i<N;i++){
+ const {g,x,top,bottom,grain,edge}=groups[i],y=current[i],h=24,w=W;
+ // Uneven sawn edges, but a shared opening; no simulated physical cut is claimed.
+ const yt=y-h, yb=y+h,notch=5+(i%3)*2;
+ top.setAttribute('d',`M${x} 143L${x+w} 143L${x+w} ${yt-7}L${x+w-12} ${yt+notch}L${x+20} ${yt-2}L${x} ${yt+7}Z`);
+ bottom.setAttribute('d',`M${x} ${yb-4}L${x+16} ${yb+notch}L${x+w-15} ${yb-1}L${x+w} ${yb+5}L${x+w} 657L${x} 657Z`);
+ edge.setAttribute('d',`M${x} ${yt+7}L${x+20} ${yt-2}L${x+w-12} ${yt+notch}L${x+w} ${yt-7}M${x} ${yb-4}L${x+16} ${yb+notch}L${x+w-15} ${yb-1}L${x+w} ${yb+5}`);
+ let texture='';for(let j=0;j<6;j++){let xx=x+6+j*8;texture+=`M${xx} 155v${Math.max(0,yt-179)}M${xx} ${yb+17}V644`};grain.setAttribute('d',texture);
+ const cx=x+w/2;points.push([cx,y]);dots[i].setAttribute('cx',cx);dots[i].setAttribute('cy',y);
+ const show=i===selected;brackets[i].setAttribute('d',show?`M${x-5} ${y-34}h-8v68h8M${x+w+5} ${y-34}h8v68h-8`:'');
+ }
+ let d=`M${points[0][0]} ${points[0][1]}`;for(let i=1;i<N;i++){let [px,py]=points[i-1],[x,y]=points[i];d+=`C${px+25} ${py} ${x-25} ${y} ${x} ${y}`};line.setAttribute('d',d);aura.setAttribute('d',d);
+ }
+let then=0;
+function tick(time){raf=0;let settle=true;const factor=then?Math.min(.3,Math.max(.07,(time-then)/90)):.18;then=time;
+ for(let i=0;i<N;i++){let d=target[i]-current[i];if(Math.abs(d)>.16){current[i]+=d*factor;settle=false}else current[i]=target[i]}
+ render();if(!settle)raf=requestAnimationFrame(tick);else then=0;
+}
+function begin(){if(!raf)raf=requestAnimationFrame(tick)}
+function svgPoint(evt){let point=svg.createSVGPoint();point.x=evt.clientX;point.y=evt.clientY;const ctm=svg.getScreenCTM();return ctm?point.matrixTransform(ctm.inverse()):{x:0,y:0}}
+svg.addEventListener('pointerdown',e=>{let p=svgPoint(e);if(p.x<X-15||p.x>X+(N-1)*P+W+15||p.y<135||p.y>670)return;active=clamp(Math.round((p.x-X-W/2)/P),0,N-1);lastPointerY=p.y;dragged=false;select(active);svg.setPointerCapture(e.pointerId)});
+svg.addEventListener('pointermove',e=>{if(active<0)return;let p=svgPoint(e),delta=p.y-lastPointerY;if(Math.abs(delta)>=1){apply(active,delta,!dragged,!dragged);dragged=true;lastPointerY=p.y}});
+function finish(e){if(active<0)return;active=-1;if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);setTimeout(()=>{dragged=false},0)}
+svg.addEventListener('pointerup',finish);svg.addEventListener('pointercancel',finish);
+bDisturb.addEventListener('click',()=>pulse(selected,steps%2?68:-68));bReset.addEventListener('click',reset);bUndo.addEventListener('click',undo);
+document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey||['INPUT','TEXTAREA'].includes(e.target.tagName))return;
+ if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();select((selected+(e.key==='ArrowRight'?1:N-1))%N)}
+ else if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();apply(selected,e.key==='ArrowUp'?-28:28)}
+ else if(e.key.toLowerCase()==='u'){e.preventDefault();undo()}
+ else if(e.key.toLowerCase()==='r'){e.preventDefault();reset()}
+ else if(e.key==='Enter'&&e.target===svg){e.preventDefault();pulse(selected,52)}
+ });
+select(selected);render();
+})();
+</script>
+</body>
+</html>
