@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>AUTOART 0021 — The Unfaithful Shadows</title>
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;width:100%;margin:0;overflow:hidden;background:#15151f;color:#ece1cd}
+body{font-family:Georgia,'Times New Roman',serif}
+canvas{width:100%;height:100%;display:block;cursor:pointer;touch-action:none}
+header{position:absolute;top:clamp(20px,4vh,42px);left:clamp(20px,4.2vw,66px);pointer-events:none;z-index:2;max-width:600px}
+.kicker{font:600 10px/1.6 system-ui,sans-serif;letter-spacing:.27em;text-transform:uppercase;color:#e3a67e}
+h1{font-size:clamp(35px,4.2vw,60px);line-height:.94;letter-spacing:-.055em;margin:12px 0 0;font-weight:400;text-shadow:0 2px 26px #171522aa}
+h1 em{font-weight:400;color:#e3a67e}
+footer{position:absolute;bottom:clamp(16px,3.7vh,40px);left:clamp(20px,4.2vw,66px);right:clamp(20px,4.2vw,66px);display:flex;gap:24px;justify-content:space-between;align-items:flex-end;pointer-events:none;z-index:2;font:600 10px/1.8 system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#e1c9aa}
+footer span:last-child{text-align:right;color:#b3abb0}
+#status{position:absolute;width:1px;height:1px;clip-path:inset(50%);white-space:nowrap;overflow:hidden}
+@media(max-width:650px){header{top:18px}h1{font-size:clamp(36px,10vw,54px)}footer{display:block;font-size:9px;line-height:1.45;bottom:15px}footer span:last-child{text-align:left;margin-top:5px}}
+@media(prefers-reduced-motion:reduce){canvas{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<canvas id="museum" role="img" tabindex="0" aria-label="A dim museum of five sculpted objects in gilded bays. Above them loom impossible shadows of other things. Select a plinth and exchange its shadow with the next; no object can keep the shadow it was given."></canvas>
+<header><div class="kicker">AUTOART / 0021 &nbsp; — &nbsp; THE COLLECTION IS OPEN</div><h1>The Unfaithful<br><em>Shadows</em></h1></header>
+<footer><span>Click a plinth to loan its shadow · ← → choose · Enter loan</span><span>Space stillness · R restore · 1–5 select</span></footer>
+<div id="status" role="status" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const canvas=document.querySelector('#museum'),ctx=canvas.getContext('2d',{alpha:false}),status=document.querySelector('#status');
+const xs=[180,432,704,992,1240],types=['urn','chair','bell','hand','lamp'];
+const shadows=['fish','tree','bird','key','stair'];
+const C={ink:'#181621',gold:'#ba855e',light:'#f5e5ce',wall:'#25232e',plinth:'#43323b',line:'#9d7c78'};
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let W=0,H=0,dpr=1,scale=1,left=0,camera=0,cameraAim=0,t=0,last=0,raf=0,paused=reduced,selected=2,showSelect=false,exchange=null;
+const assignments=[0,1,2,3,4];
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
+const P=(pts)=>{ctx.beginPath();for(let i=0;i<pts.length;i++)i?ctx.lineTo(...pts[i]):ctx.moveTo(...pts[0]);ctx.closePath()};
+const stroke=(color,width)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()};
+const fill=(color)=>{ctx.fillStyle=color;ctx.fill()};
+function ellipse(x,y,rx,ry,color){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);fill(color)}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+function init(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,1.75);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);scale=Math.max(Math.min(W/1440,H/900), H/900*(W<650?.68:.82));let full=1440*scale;if(full<=W){cameraAim=camera=(W-full)*.5;}else {cameraAim=clamp(W/2-xs[selected]*scale,W-full,0);camera=cameraAim;}paint();wake()}
+function background(){ctx.setTransform(dpr,0,0,dpr,0,0);const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#16141f');g.addColorStop(.75,'#2e2932');g.addColorStop(1,'#0e131d');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+const v=ctx.createRadialGradient(W*.52,H*.5,10,W*.52,H*.5,W*.8);v.addColorStop(0,'#16141f00');v.addColorStop(1,'#0709119e');ctx.fillStyle=v;ctx.fillRect(0,0,W,H)}
+function gallery(){
+ctx.fillStyle='#292531';ctx.fillRect(0,0,1440,900);ctx.fillStyle='#211d2a';ctx.fillRect(0,0,1440,208);
+for(let i=0;i<5;i++){const x=xs[i],wid=[202,214,240,216,196][i],top=[212,236,198,234,212][i];
+// Neither the bays nor their contents constitute a perfect grid.
+ctx.save();ctx.translate(x,0);let g=ctx.createLinearGradient(0,top,0,740);g.addColorStop(0,'#40333e');g.addColorStop(.45,'#332d3b');g.addColorStop(1,'#24222f');ctx.fillStyle=g;
+ctx.beginPath();ctx.moveTo(-wid/2,737);ctx.lineTo(-wid/2,top+wid*.47);ctx.quadraticCurveTo(-wid/2,top-36,0,top-43);ctx.quadraticCurveTo(wid/2,top-36,wid/2,top+wid*.47);ctx.lineTo(wid/2,737);ctx.closePath();ctx.fill();stroke('#6b5160',3);
+ctx.beginPath();ctx.moveTo(-wid/2+13,734);ctx.lineTo(-wid/2+13,top+wid*.47);ctx.quadraticCurveTo(-wid/2+13,top-13,0,top-29);ctx.quadraticCurveTo(wid/2-13,top-13,wid/2-13,top+wid*.47);ctx.lineTo(wid/2-13,734);stroke('rgba(235,168,113,.28)',2);
+ctx.restore();}
+ctx.fillStyle='#1a1923';ctx.fillRect(0,752,1440,148);ctx.strokeStyle='#987157';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,752);ctx.lineTo(1440,752);ctx.stroke();
+for(let j=0;j<36;j++){let y=756+j*4.2;ctx.strokeStyle=`rgba(188,150,127,${.10*(1-j/40)})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(1440,y);ctx.stroke()}
+// A long, unclaimed surface interrupts the procession.
+ctx.fillStyle='#322b34';ctx.fillRect(0,729,1440,24);
+for(let k=0;k<72;k++){let x=((k*179+47)%1440),y=760+(k*53)%130;ctx.fillStyle='rgba(245,223,201,.042)';ctx.fillRect(x,y,1.3,1.1)}
+// Ceiling joint / unlit picture rails.
+ctx.strokeStyle='rgba(212,161,112,.38)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,168);ctx.lineTo(1440,168);ctx.moveTo(0,180);ctx.lineTo(1440,180);ctx.stroke();}
+function lights(){for(let i=0;i<5;i++){let x=xs[i]+Math.sin(t*.18+i*.7)*10, top=173;let g=ctx.createRadialGradient(x,top+138,5,x,top+200,255);g.addColorStop(0,'rgba(250,197,137,.16)');g.addColorStop(1,'rgba(250,197,137,0)');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x-161,720);ctx.lineTo(x+161,720);ctx.closePath();ctx.fill();ctx.strokeStyle='#6d5962';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x,165);ctx.lineTo(x,188);ctx.stroke();ellipse(x,193,12,7,'#e4bd86');ellipse(x,197,5,3,'#fff2cb')}}
+function fish(){ellipse(0,0,64,30,'#11151eb3');P([[57,0],[114,-35],[110,0],[113,36]]);fill('#11151eb3');P([[-10,-24],[-30,-51],[17,-26]]);fill('#11151eb3');ellipse(-36,-5,4.5,4,'#bfa293')}
+function bird(){ctx.beginPath();ctx.moveTo(-111,8);ctx.bezierCurveTo(-61,-37,-49,-58,-18,-18);ctx.bezierCurveTo(8,-39,26,-38,52,-9);ctx.bezierCurveTo(78,-11,92,-28,109,-41);ctx.bezierCurveTo(100,2,75,27,42,29);ctx.quadraticCurveTo(0,65,-34,21);ctx.bezierCurveTo(-79,42,-93,28,-111,8);fill('#10151dbb');ellipse(41,4,4,4,'#bfa293')}
+function tree(){ctx.fillStyle='#11141dc0';ctx.fillRect(-11,-9,22,106);ctx.beginPath();ctx.moveTo(-82,-10);ctx.quadraticCurveTo(-128,-71,-65,-100);ctx.quadraticCurveTo(-50,-148,-6,-123);ctx.quadraticCurveTo(43,-150,65,-107);ctx.quadraticCurveTo(126,-80,90,-20);ctx.quadraticCurveTo(58,22,25,7);ctx.quadraticCurveTo(-23,38,-58,10);ctx.closePath();ctx.fill();for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(-42+i*23,9);ctx.lineTo(-30+i*18,-42-i%2*21);stroke('rgba(202,145,118,.25)',2)}}
+function key(){ellipse(-40,0,43,43,'#11141dbb');ellipse(-40,0,20,20,'#3e303e');roundRect(-4,-9,117,18,2);fill('#11141dbb');ctx.fillStyle='#11141dbb';ctx.fillRect(78,3,14,34);ctx.fillRect(105,3,14,23)}
+function stair(){ctx.beginPath();ctx.moveTo(-102,78);ctx.lineTo(-102,47);ctx.lineTo(-56,47);ctx.lineTo(-56,14);ctx.lineTo(-10,14);ctx.lineTo(-10,-19);ctx.lineTo(38,-19);ctx.lineTo(38,-56);ctx.lineTo(95,-56);ctx.lineTo(95,78);ctx.closePath();fill('#11141dbd');ctx.strokeStyle='#b88e8244';ctx.lineWidth=2;for(let i=0;i<5;i++){let xx=-101+i*47,yy=47-i*34;ctx.beginPath();ctx.moveTo(xx,yy);ctx.lineTo(xx+43,yy);ctx.stroke()}}
+const drawShadow=[fish,tree,bird,key,stair];
+function shadowAt(i,thing,x,y,alpha=1){ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);let drift=Math.sin(t*.29+i*.5)*9;ctx.transform(1,.015*Math.sin(t*.2+i),-.07,1,drift,0);ctx.scale(1.08,.99);drawShadow[thing]();ctx.strokeStyle='rgba(226,169,131,.36)';ctx.lineWidth=1.5;
+// A hairline register mark records where a shadow has failed to belong.
+ctx.beginPath();ctx.moveTo(-9,108);ctx.lineTo(9,108);ctx.moveTo(0,99);ctx.lineTo(0,118);ctx.stroke();ctx.restore()}
+function shadowsDraw(){for(let i=0;i<5;i++){const originX=xs[i]+Math.sin(t*.24+i*.9)*14,originY=[420,431,405,431,415][i];let involved=exchange&&(exchange.a===i||exchange.b===i);if(!involved)shadowAt(i,assignments[i],originX,originY);}
+if(exchange){const p=smooth(exchange.age/2.4),a=exchange.a,b=exchange.b;
+let ax=xs[a],bx=xs[b],ay=[420,431,405,431,415][a],by=[420,431,405,431,415][b];
+let lift=Math.sin(p*Math.PI)*106;
+shadowAt(a,exchange.thingA,ax+(bx-ax)*p,ay+(by-ay)*p-lift,1);
+shadowAt(b,exchange.thingB,bx+(ax-bx)*p,by+(ay-by)*p+lift*.62,1);
+}}
+function vessel(kind){ctx.save();let g=ctx.createLinearGradient(-53,0,60,0);g.addColorStop(0,'#76616b');g.addColorStop(.25,'#e4cbb7');g.addColorStop(.52,'#d5ad9b');g.addColorStop(1,'#6f5361');ctx.fillStyle=g;
+if(kind==='urn'){roundRect(-21,-103,42,21,5);ctx.fill();ctx.beginPath();ctx.moveTo(-21,-88);ctx.bezierCurveTo(-39,-70,-65,-25,-47,12);ctx.quadraticCurveTo(0,49,47,12);ctx.bezierCurveTo(65,-25,39,-70,21,-88);ctx.closePath();ctx.fill();stroke('#e7ceb7',2);ctx.strokeStyle='#7d5c62';ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(0,-100,24,8,0,0,Math.PI*2);ctx.stroke();ellipse(0,-107,21,3.5,'#201b28');}
+if(kind==='chair'){ctx.fillRect(-46,-100,18,114);ctx.fillRect(-46,-100,91,18);ctx.fillRect(28,-105,17,119);ctx.fillRect(-52,0,109,20);ctx.fillRect(-39,16,11,53);ctx.fillRect(33,16,11,53);ctx.strokeStyle='#493c48';ctx.lineWidth=3;ctx.strokeRect(-36,-91,72,66);}
+if(kind==='bell'){ctx.beginPath();ctx.moveTo(-10,-93);ctx.quadraticCurveTo(0,-115,10,-93);ctx.bezierCurveTo(55,-83,52,-17,62,8);ctx.lineTo(-62,8);ctx.bezierCurveTo(-52,-17,-55,-83,-10,-93);ctx.closePath();ctx.fill();stroke('#7f5c58',4);ellipse(0,11,70,9,'#dfbba2');ellipse(0,21,11,11,'#947272');}
+if(kind==='hand'){ctx.beginPath();ctx.moveTo(-40,29);ctx.lineTo(-41,-40);ctx.quadraticCurveTo(-41,-53,-30,-53);ctx.quadraticCurveTo(-21,-53,-21,-40);ctx.lineTo(-20,-94);ctx.quadraticCurveTo(-19,-110,-8,-110);ctx.quadraticCurveTo(2,-110,2,-94);ctx.lineTo(4,-108);ctx.quadraticCurveTo(6,-124,16,-123);ctx.quadraticCurveTo(26,-122,25,-104);ctx.lineTo(24,-99);ctx.quadraticCurveTo(26,-114,36,-113);ctx.quadraticCurveTo(47,-112,44,-94);ctx.lineTo(41,-13);ctx.quadraticCurveTo(64,-49,74,-37);ctx.quadraticCurveTo(83,-25,58,12);ctx.quadraticCurveTo(38,35,35,48);ctx.lineTo(-23,50);ctx.closePath();ctx.fill();stroke('#ab8e89',2);}
+if(kind==='lamp'){ctx.beginPath();ctx.moveTo(0,-111);ctx.lineTo(0,-8);stroke('#dbc4ab',9);P([[-55,-106],[57,-106],[39,-54],[-36,-54]]);ctx.fill();stroke('#e8ccb5',3);ellipse(0,0,28,11,'#c4a594');ctx.fillRect(-4,-6,8,51);roundRect(-43,41,86,15,6);ctx.fill();}
+ctx.restore()}
+function objects(){for(let i=0;i<5;i++){const x=xs[i],floorY=[675,696,659,692,674][i];ctx.save();ctx.translate(x,floorY);const pedW=[154,170,181,154,165][i];
+ctx.fillStyle='rgba(15,13,21,.58)';ctx.beginPath();ctx.ellipse(0,68,pedW*.7,14,0,0,Math.PI*2);ctx.fill();
+ctx.fillStyle=C.plinth;P([[-pedW/2,20],[pedW/2,20],[pedW*.48,68],[-pedW*.48,68]]);ctx.fill();stroke('#84616a',2);
+ctx.fillStyle='#66525a';ctx.fillRect(-pedW/2,10,pedW,17);ctx.fillStyle='#c1a17f';ctx.fillRect(-pedW/2,10,pedW,3);
+ctx.save();ctx.translate(0,2);vessel(types[i]);ctx.restore();
+ctx.textAlign='center';ctx.fillStyle='#be9c7c';ctx.font='600 11px system-ui';ctx.fillText(String(i+1).padStart(2,'0')+' / '+['VESSEL','SEAT','RELIC','GESTURE','BEACON'][i],0,44);
+if(showSelect&&selected===i){ctx.strokeStyle='#f0c38a';ctx.lineWidth=2;ctx.setLineDash([5,7]);ctx.strokeRect(-pedW/2-14,-134,pedW+28,213);ctx.setLineDash([])}
+ctx.restore()}}
+function atmosphere(){// Unequal wall specks, unregistered cataloguing, a hanging inventory number.
+for(let i=0;i<120;i++){let x=(i*491+37)%1440,y=210+(i*193)%510;ctx.fillStyle='rgba(225,190,170,.042)';ctx.fillRect(x,y,(i%3)+.6,1)}
+ctx.fillStyle='#ba866b';ctx.textAlign='right';ctx.font='600 11px system-ui';ctx.fillText('THE OBJECT REMAINS.  THE SHADOW IS ON LOAN.',1370,149);
+ctx.save();ctx.translate(77,476);ctx.rotate(-Math.PI/2);ctx.font='600 10px system-ui';ctx.fillStyle='#856c71';ctx.fillText('INVENTORY  /  FIVE IMPOSSIBLE ATTRIBUTIONS',0,0);ctx.restore()}
+function paint(){if(!W)return;background();camera+=(cameraAim-camera)*.19;if(Math.abs(camera-cameraAim)<.01)camera=cameraAim;ctx.save();ctx.translate(camera,0);ctx.scale(scale,scale);ctx.translate(0,(H/scale-900)*.5);gallery();lights();shadowsDraw();objects();atmosphere();ctx.restore()}
+function wake(){if(!raf){last=performance.now();raf=requestAnimationFrame(frame)}}
+function frame(now){raf=0;const dt=clamp((now-last)/1000,0,.055);last=now;if(!paused){t+=dt;if(exchange){exchange.age+=dt;if(exchange.age>=2.4){let {a,b}=exchange;[assignments[a],assignments[b]]=[assignments[b],assignments[a]];exchange=null;status.textContent='The borrowed shadows have settled into their new incorrect homes.'}}}paint();if(!paused||Math.abs(camera-cameraAim)>.2)wake()}
+function focus(i){selected=(i+5)%5;showSelect=true;cameraAim=Math.min(0,Math.max(W-1440*scale,W/2-xs[selected]*scale));status.textContent=`Pedestal ${selected+1} selected.`;paint();wake()}
+function loan(i){if(exchange){status.textContent='The current loan must finish before another begins.';return}focus(i);const b=(i+1)%5;exchange={a:i,b,age:0,thingA:assignments[i],thingB:assignments[b]};status.textContent=`The shadow of pedestal ${i+1} is trading places with pedestal ${b+1}.`;paint();wake()}
+function reset(){assignments.splice(0,5,0,1,2,3,4);exchange=null;t=0;selected=2;showSelect=false;cameraAim=Math.min(0,Math.max(W-1440*scale,W/2-xs[selected]*scale));paused=reduced;status.textContent='The exhibition has returned to its first misattribution.';paint();wake()}
+canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;let worldX=(e.clientX-camera)/scale,worldY=(e.clientY-(H-900*scale)/2)/scale;let best=0,d=Infinity;for(let i=0;i<5;i++){let dist=Math.abs(xs[i]-worldX);if(dist<d){d=dist;best=i}}if(d<116&&worldY>535&&worldY<790)loan(best)},{passive:true});
+addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['arrowleft','arrowright','enter',' ','r','1','2','3','4','5'].includes(k))e.preventDefault();if(k==='arrowleft'||k==='arrowright')focus(selected+(k==='arrowleft'?-1:1));else if(k==='enter')loan(selected);else if(k===' '){paused=!paused;status.textContent=paused?'The exhibition is motionless.':'The lamps resume their slow drift.';paint();wake()}else if(k==='r')reset();else if(/^[1-5]$/.test(k))focus(Number(k)-1)});
+addEventListener('resize',init,{passive:true});init();wake();
+})();
+</script>
+</body>
+</html>
