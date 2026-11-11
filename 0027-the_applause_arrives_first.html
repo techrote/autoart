@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUTOART 0027 — The Applause Arrives First</title>
+<style>
+:root{color-scheme:dark;--paper:#f2dfb6;--muted:#cfaa8b;--red:#aa384e;--gold:#edb970}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#130e19;color:var(--paper)}
+body{font-family:Georgia,'Times New Roman',serif;overflow-x:hidden}
+main{min-height:100dvh;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 38%,#342035 0%,#160e1c 73%)}
+header{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:24px clamp(18px,4vw,60px) 5px}
+.meta,.instruction,.readout,.controls{font:11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em}
+.meta{color:#dcae77;text-transform:uppercase;margin-top:5px}.title{margin:11px 0 0;font-size:clamp(34px,4.5vw,70px);font-weight:400;line-height:.94;letter-spacing:-.04em}.title em{color:#e7a0a2;font-weight:400}
+.subtitle{font:clamp(13px,1.2vw,17px)/1.5 Georgia,serif;color:#d8c5c1;margin:13px 0 0;max-width:400px}
+header .right{font:10px/1.7 ui-monospace,monospace;letter-spacing:.16em;text-align:right;color:#ac8c90;text-transform:uppercase;margin-top:6px}
+.stage{position:relative;flex:1;min-height:0;overflow:hidden}svg{width:100%;height:clamp(480px, calc(100dvh - 330px), 820px);display:block;touch-action:manipulation}
+footer{display:flex;align-items:end;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:8px clamp(18px,4vw,60px) 24px;position:relative;z-index:2}
+.instruction{color:#cbaead;max-width:650px;text-transform:uppercase}.readout{color:#f2c688;margin-bottom:7px;text-transform:uppercase}
+.controls{display:flex;gap:7px;flex-wrap:wrap}.controls button{border:1px solid #af7176;background:#271825;color:#fae0c2;padding:8px 12px;font:inherit;letter-spacing:inherit;cursor:pointer}.controls button:hover,.controls button:focus-visible{background:#633044;outline:2px solid #f3b975;outline-offset:2px}.controls button[aria-pressed="true"]{background:#7f4655}
+#crowd>g{cursor:pointer}#crowd>g:focus{outline:none}#crowd>g:focus-visible .chair{stroke:#ffe5a6;stroke-width:4}
+.section-halo{fill:none;stroke:#ffdb91;stroke-width:2;stroke-dasharray:7 8;opacity:0;transition:opacity .25s} .section-halo.selected{opacity:.85}
+@media(max-width:620px){header{padding:18px 20px 0}header .right{display:none}.title{font-size:38px}.subtitle{font-size:13px}.stage{min-height:470px}svg{height:470px}footer{padding:7px 20px 18px}.meta,.instruction,.readout,.controls{font-size:10px;letter-spacing:.045em}.controls button{padding:8px 10px}}
+@media(prefers-reduced-motion:reduce){.section-halo{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<header><div><div class="meta">AUTOART / 0027 · A rehearsal without a performer</div><h1 class="title">The Applause<br><em>Arrives First</em></h1><p class="subtitle">The seats are full. The stage is empty.<br>Something has already begun.</p></div><div class="right">House lights / lowered<br>Performers / none<br>Audience / ahead of schedule</div></header>
+<div class="stage"><svg id="theatre" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A crimson theatrical proscenium encloses an empty ivory spotlight. In the dark foreground rows of small ochre figures repeatedly applaud before any performer arrives.">
+<defs>
+ <linearGradient id="back" x2="0" y2="1"><stop stop-color="#241623"/><stop offset=".65" stop-color="#402136"/><stop offset="1" stop-color="#170e19"/></linearGradient>
+ <linearGradient id="velvet"><stop stop-color="#45162a"/><stop offset=".23" stop-color="#a53d4e"/><stop offset=".43" stop-color="#521c33"/><stop offset=".67" stop-color="#b44e56"/><stop offset="1" stop-color="#471525"/></linearGradient>
+ <linearGradient id="light" x2="0" y2="1"><stop stop-color="#f9dfac" stop-opacity=".04"/><stop offset="1" stop-color="#e9b66e" stop-opacity=".22"/></linearGradient>
+ <radialGradient id="spot"><stop stop-color="#ffe0ac" stop-opacity=".9"/><stop offset=".52" stop-color="#efc184" stop-opacity=".67"/><stop offset="1" stop-color="#be7c6d" stop-opacity="0"/></radialGradient>
+ <pattern id="grain" width="31" height="29" patternUnits="userSpaceOnUse"><path d="M2 13h1M16 7h1M24 23h1M8 27h1" stroke="#f4ceb3" stroke-opacity=".18" stroke-width="1"/></pattern>
+ <pattern id="wall" width="44" height="28" patternUnits="userSpaceOnUse"><path d="M0 27h44M22 0v27" stroke="#ce8c76" stroke-opacity=".10" stroke-width="1"/></pattern>
+</defs>
+<rect width="1200" height="760" fill="url(#back)"/><rect width="1200" height="760" fill="url(#wall)"/>
+<!-- Theatre arch and the empty stage -->
+<path d="M125 590V142Q125 58 213 58H987Q1075 58 1075 142V590" fill="none" stroke="#a35e58" stroke-width="61"/>
+<path d="M119 591V143Q119 50 210 50H991Q1081 50 1081 143V591" fill="none" stroke="#d4a66e" stroke-width="4"/>
+<path d="M166 578V150Q166 100 220 100H977Q1030 100 1030 150V578" fill="none" stroke="#2a0e1d" stroke-width="10"/>
+<g id="bulbs" fill="#efc885"></g>
+<rect x="193" y="134" width="814" height="424" rx="10" fill="#291724"/>
+<path d="M390 144L820 144L970 554H225Z" fill="url(#light)"/>
+<ellipse cx="602" cy="382" rx="252" ry="235" fill="url(#spot)"/>
+<path d="M323 553Q602 510 881 553" fill="none" stroke="#efbd7f" stroke-opacity=".58" stroke-width="2"/>
+<g stroke="#f9d5a1" fill="none" opacity=".21"><path d="M597 168v317M582 326l21 0M602 347l34 0"/><path d="M412 548L449 494M790 548L755 494"/></g>
+<!-- The absence is spatially precise: a vacant oval never receives a performer. -->
+<ellipse cx="602" cy="517" rx="123" ry="19" fill="#160c18" opacity=".72"/>
+<ellipse cx="602" cy="514" rx="116" ry="14" stroke="#f0cc98" stroke-opacity=".28" fill="none"/>
+<!-- Heavy symmetrical house curtains: fold arcs and scalloped bottom edges -->
+<path d="M192 120Q249 131 308 120C321 275 321 422 378 558Q302 579 216 557Q259 362 192 120Z" fill="url(#velvet)" stroke="#6b2236" stroke-width="7"/>
+<path d="M1008 120Q950 131 894 120C883 275 881 422 823 558Q899 579 985 557Q942 362 1008 120Z" fill="url(#velvet)" stroke="#6b2236" stroke-width="7"/>
+<g fill="none" stroke="#ee9a8e" stroke-opacity=".33" stroke-width="3"><path d="M212 126Q272 318 233 543M248 127Q290 339 265 553M281 125Q311 374 303 565M989 126Q928 318 968 543M954 126Q914 349 934 552M920 126Q884 371 897 563"/></g>
+<path d="M186 120Q594 165 1014 120L1000 175Q606 227 200 175Z" fill="#8d3043" stroke="#d78d7f" stroke-width="4"/>
+<path d="M205 171Q247 205 287 171Q328 210 368 177Q420 214 466 179Q518 219 565 181Q613 219 660 181Q710 214 759 176Q803 207 847 171Q885 207 927 171Q965 203 998 171" fill="none" stroke="#4b182d" stroke-width="16"/>
+<path d="M211 132Q601 172 993 132" fill="none" stroke="#f6b98a" stroke-width="3" stroke-opacity=".7"/>
+<!-- A vacant golden edge, precisely what the audience has paid to see. -->
+<rect x="174" y="553" width="854" height="20" fill="#3d1d2b" stroke="#cc9168" stroke-width="3"/>
+<g id="footlights" fill="#edbf73"></g>
+<!-- Tiered audience; foreground is much darker and denser than the deserted stage. -->
+<path d="M0 592Q600 553 1200 592L1200 760H0Z" fill="#1a1220"/>
+<path d="M0 634Q600 597 1200 634" fill="none" stroke="#91505c" stroke-width="5" opacity=".7"/>
+<path d="M0 715Q600 677 1200 715" fill="none" stroke="#693548" stroke-width="6"/>
+<g id="crowd"></g>
+<g id="marks" pointer-events="none"></g>
+<g id="halos" pointer-events="none"><ellipse class="section-halo" id="halo0" cx="350" cy="653" rx="175" ry="91"/><ellipse class="section-halo selected" id="halo1" cx="600" cy="653" rx="175" ry="91"/><ellipse class="section-halo" id="halo2" cx="850" cy="653" rx="175" ry="91"/></g>
+<rect x="0" y="0" width="1200" height="760" fill="url(#grain)" pointer-events="none"/>
+<g fill="#e2b47c" font-family="monospace" font-size="11" letter-spacing="3" opacity=".65"><text x="181" y="585">THE STAGE IS READY</text><text x="1014" y="585" text-anchor="end">NO ONE WILL ENTER</text></g>
+</svg></div>
+<footer><div><div class="readout" id="readout" aria-live="polite">CENTER / A QUIET OVATION</div><div class="instruction">Touch the audience to send a wave · ← → choose · Enter call · 1–3 sections · Space hold · R restore</div></div><div class="controls"><button id="call" type="button">CALL FOR THEM</button><button id="hold" type="button" aria-pressed="false">HOLD ∥</button><button id="reset" type="button">RESTORE ↺</button></div></footer>
+</main>
+<script>
+(()=>{'use strict';
+const NS='http://www.w3.org/2000/svg',crowd=document.getElementById('crowd'),marks=document.getElementById('marks'),readout=document.getElementById('readout'),hold=document.getElementById('hold');
+const small=matchMedia('(prefers-reduced-motion: reduce)').matches;const drawing=document.getElementById('theatre');function fit(){drawing.setAttribute('preserveAspectRatio',innerWidth<=620?'xMidYMid slice':'none')}fit();window.addEventListener('resize',fit);let paused=small,selected=1,t=0,last=0,dirty=true;
+const people=[],waves=[];const names=['LEFT','CENTER','RIGHT'];
+function el(tag,attrs,parent){let e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(parent)parent.appendChild(e);return e}
+function ease(v){v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)}
+function section(i){selected=i;for(let j=0;j<3;j++)document.getElementById('halo'+j).classList.toggle('selected',j===i);readout.textContent=names[i]+' / LISTENING';dirty=true}
+// Fixed actors: two ranks, three banks, four different silhouettes per bank.
+for(let row=0;row<2;row++)for(let bank=0;bank<3;bank++)for(let j=0;j<4;j++){
+ const i=people.length,x=264+bank*254+j*56+(row?13:0),y=636+row*64+(j%2)*4,s=row?.99:.75;
+ let g=el('g',{transform:`translate(${x} ${y}) scale(${s})`,tabindex:'0',role:'button','aria-label':`${names[bank].toLowerCase()} audience member ${j+1}, call applause`},crowd);
+ el('path',{class:'chair',d:'M-26 31Q-31 0-23-6Q0-18 23-6Q31 0 26 31Z',fill:'#632d3b',stroke:'#a1655d','stroke-width':'2.5'},g);
+ el('path',{d:'M-20 21Q-14 3 0 4Q14 3 20 21L20 34H-20Z',fill:(row?'#b47c6c':'#91675e')},g);
+ el('ellipse',{cx:0,cy:-11,rx:12+(j%2),ry:16,fill:['#ca9179','#ad706a','#e1a785','#bd7b77'][j]},g);
+ el('path',{d:'M-14-16Q-12-34 0-30Q17-34 15-15Q7-23-1-20Q-8-25-14-16Z',fill:['#372334','#382b36','#512b33','#302c38'][j]},g);
+ let l=el('g',{class:'hand-left'},g),r=el('g',{class:'hand-right'},g);
+ el('path',{d:'M-11 18L-23-6Q-31-15-32-4L-26 10Q-29-4-34-3Q-40-2-34 11L-17 25Z',fill:'#e4a78a',stroke:'#492c37','stroke-width':'2'},l);
+ el('path',{d:'M11 18L23-6Q31-15 32-4L26 10Q29-4 34-3Q40-2 34 11L17 25Z',fill:'#e4a78a',stroke:'#492c37','stroke-width':'2'},r);
+ g.addEventListener('click',()=>call(bank));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();call(bank)}});
+ people.push({l,r,g,x,y,bank,j,row,s,phase:i*.76});
+}
+// All glints are reused SVG nodes, never appended per call or animation frame.
+for(let i=0;i<42;i++){let m=el('path',{d:'M-4-4L4 4M-4 4L4-4',stroke:i%3===0?'#f0c579':'#c8787e','stroke-width':i%3===0?'2.5':'1.6','stroke-linecap':'round',opacity:0},marks);m.dataset.idx=i}
+for(let x=208;x<=992;x+=28)el('circle',{cx:x,cy:145+(Math.abs(x-600)/400)*13,r:3,opacity:.7},document.getElementById('bulbs'));
+for(let x=194;x<=1006;x+=44)el('circle',{cx:x,cy:563,r:4},document.getElementById('footlights'));
+function call(bank=selected){section(bank);if(waves.length>=6)waves.shift();waves.push({bank,start:t,seq:waves.length});readout.textContent=names[bank]+' / APPLAUSE SENT TO AN EMPTY STAGE';dirty=true}
+function toggle(){paused=!paused;hold.setAttribute('aria-pressed',paused);hold.textContent=paused?'RESUME ▶':'HOLD ∥';readout.textContent=paused?'HOUSE / HELD':names[selected]+' / LISTENING';dirty=true}
+function reset(){waves.length=0;t=0;last=0;paused=small;hold.setAttribute('aria-pressed',paused);hold.textContent=paused?'RESUME ▶':'HOLD ∥';section(1);readout.textContent='CENTER / A QUIET OVATION';dirty=true}
+function intensity(p){let faint=.12+.10*Math.max(0,Math.sin(t*.6+p.phase));for(let w of waves){let age=t-w.start,reach=age*5.4,dist=Math.abs(p.bank-w.bank)*3+Math.abs(p.j-1.5)*.32+p.row*.6;let a=Math.max(0,1-Math.abs(reach-dist)/2.7)*Math.max(0,1-age/2.7);if(a>faint)faint=a}return Math.min(1,faint)}
+function render(){for(let p of people){let a=intensity(p),bend=Math.sin(t*11+p.phase)*a*26,near=12*a;
+ p.l.setAttribute('transform',`translate(${near} 0) rotate(${bend.toFixed(2)} -17 21)`);
+ p.r.setAttribute('transform',`translate(${-near} 0) rotate(${(-bend).toFixed(2)} 17 21)`);
+ p.g.style.opacity=(.75+.25*a).toFixed(3);
+ }
+ const paths=marks.children;for(let i=0;i<paths.length;i++){let m=paths[i],w=waves[Math.floor(i/7)%Math.max(1,waves.length)];if(!w){m.setAttribute('opacity','0');continue}let age=t-w.start,progress=age/2.7,local=(i%7)/7;if(progress<=0||progress>=1){m.setAttribute('opacity','0');continue}
+ let x=264+w.bank*254+local*230+(Math.sin(i*41)*18),y=597-progress*250-(i%3)*14;
+ m.setAttribute('transform',`translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(i*31)%90}) scale(${(.65+progress*.6).toFixed(2)})`);
+ m.setAttribute('opacity',(Math.min(1,progress*6,(1-progress)*4)*.8).toFixed(3));
+ }
+}
+function tick(now){if(!last)last=now;const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!paused){t+=dt;for(let i=waves.length-1;i>=0;i--)if(t-waves[i].start>2.7)waves.splice(i,1)}if(!paused||dirty){render();dirty=false}requestAnimationFrame(tick)}
+document.getElementById('call').addEventListener('click',()=>call());hold.addEventListener('click',toggle);document.getElementById('reset').addEventListener('click',reset);
+window.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA'].includes(e.target.tagName)||e.target.tagName==='BUTTON')return;
+const k=e.key;if(['ArrowLeft','ArrowRight','Enter',' ','r','R','1','2','3'].includes(k))e.preventDefault();if(k==='ArrowLeft')section((selected+2)%3);else if(k==='ArrowRight')section((selected+1)%3);else if(k==='Enter')call();else if(k===' ')toggle();else if(k.toLowerCase()==='r')reset();else if(/^[1-3]$/.test(k))call(Number(k)-1)});
+reset();requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
