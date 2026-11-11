@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUTOART 0039 — The Dew Has No Owner</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#ebdfc8;color:#243a50}body{font-family:Georgia,'Times New Roman',serif}main{height:100svh;min-height:640px;position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 70% 47%,#f6eddb 0%,#e5d7bc 70%,#d8c7a6 120%)}
+canvas{display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}.heading{position:absolute;top:8%;left:5%;width:min(325px,34vw);pointer-events:none}.index{font:700 11px/1.6 monospace;letter-spacing:.18em;color:#ad5848}.heading h1{font-size:clamp(45px,5.6vw,89px);font-weight:400;line-height:.96;letter-spacing:-.055em;margin:31px 0 18px}.heading p{font-size:clamp(14px,1.2vw,18px);font-style:italic;line-height:1.5;margin:0;max-width:265px;color:#566477}.footer{position:absolute;left:5%;right:5%;bottom:5%;display:flex;align-items:end;justify-content:space-between;gap:24px}.caption{max-width:350px;border-top:1px solid #8b7767;padding-top:12px;font:11px/1.7 monospace;letter-spacing:.03em;color:#525b60}.caption strong{color:#9f5040;display:block;letter-spacing:.12em}.actions{display:flex;gap:9px}button{border:1px solid #30475d;border-radius:0;background:#30475d;color:#f7eddb;min-height:45px;padding:12px 17px;font:700 11px monospace;letter-spacing:.07em;cursor:pointer}button:last-child{background:transparent;color:#30475d}button:hover,button:focus-visible{background:#b95347;color:#fff6e6;outline:2px solid #b95347;outline-offset:3px}#status{position:absolute;right:5%;top:8%;font:11px/1.5 monospace;letter-spacing:.12em;color:#8b6c5d;text-align:right;pointer-events:none}
+@media(max-width:700px){main{min-height:640px}canvas{top:267px;bottom:165px;height:calc(100% - 432px)}.heading{top:22px;left:22px;width:calc(100% - 44px)}.heading h1{font-size:49px;margin:13px 0 8px;max-width:300px}.heading p{font-size:13px;max-width:290px}.index{font-size:9px}#status{top:auto;bottom:157px;right:20px;font-size:9px}.footer{bottom:0;left:0;right:0;min-height:145px;padding:18px 20px;background:#ebdfc8dd;display:block;border-top:1px solid #c9b79e}.caption{font-size:10px;line-height:1.5;max-width:none;padding:0;border:0;margin:0 0 13px}.actions{display:grid;grid-template-columns:1fr 1fr}button{min-height:43px}}
+</style></head><body><main>
+<canvas id="sheet" aria-label="A blue hand-drawn web laden with amber dew. Drag across the web to disturb it; breeze or settle with the buttons or B and R keys." role="img"></canvas>
+<section class="heading"><div class="index">AUTOART / 0039<br>THE HOURS BEFORE SUNRISE</div><h1>The Dew<br>Has No<br>Owner</h1><p>The delicate thing is not the web. It is how little the morning belongs to it.</p></section>
+<div id="status" role="status" aria-live="polite">FORTY-EIGHT DROPLETS / STILL</div>
+<footer class="footer"><div class="caption"><strong>FIELD NOTE / 039</strong>Drag the air across the threads. What trembles remains attached.</div><div class="actions"><button type="button" id="breeze">SEND A BREEZE · B</button><button type="button" id="settle">LET IT SETTLE · R</button></div></footer>
+</main><script>
+(()=>{'use strict';
+const canvas=document.getElementById('sheet'),ctx=canvas.getContext('2d'),status=document.getElementById('status'),main=document.querySelector('main'),motion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TWO=Math.PI*2,N=29,RINGS=15,CX=773,CY=371,RX=337,RY=310;
+const rand=(n)=>{let x=(n+1)*16807%2147483647;x=x*48271%2147483647;return x/2147483647};
+const angle=Array.from({length:N},(_,i)=>-Math.PI/2+i*TWO/N+.025*Math.sin(i*2.9));
+const radius=angle.map((_,i)=>.87+.11*rand(i+71));
+const dew=Array.from({length:48},(_,j)=>({spoke:(j*17+3)%N,ring:2+(j*11)%12,offset:rand(j+125)*.68,scale:.6+rand(j+276)*1.35,phase:j*2.213,slip:0}));
+let w=1200,h=800,dpr=1,velocity=0,offset=0,phase=0,alive=false,raf=0,drag=false,lastX=0,lastY=0,frameTime=0;
+function fit(){const r=canvas.getBoundingClientRect();w=Math.max(1,r.width);h=Math.max(1,r.height);dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);draw()}
+function position(a,t,spoke,now=phase){const radiusFactor=radius[spoke];const bend=(.38+.5*t)*Math.sin(a*2.1+now*.72+spoke*.16)*offset;
+ const x=CX+Math.cos(a)*RX*t*radiusFactor+bend, y=CY+Math.sin(a)*RY*t*radiusFactor+offset*.28*Math.sin(a*3+now)*t;
+ return [x,y]}
+function moveToPoint(a,t,i){return position(a,t,i)}
+function web(){ctx.lineCap='round';const silk='#375772';
+ // Radial lines are not perfectly straight; two broken spokes remain visible as losses.
+ for(let i=0;i<N;i++){ctx.beginPath();const start=i===7?.22:.035;const end=i===21?.64:1;for(let s=0;s<=26;s++){const t=start+(end-start)*s/26,p=moveToPoint(angle[i],t,i);if(s===0)ctx.moveTo(...p);else ctx.lineTo(...p)}ctx.strokeStyle=silk;ctx.lineWidth=i%5===0?1.6:1.05;ctx.globalAlpha=.57;ctx.stroke()}
+ // Spiral hoops are stitched with varying tension; some links are absent.
+ for(let ring=1;ring<=RINGS;ring++){const t=.075+ring*.057;for(let i=0;i<N;i++){if((ring*11+i*7)%41===0||(ring===11&&i>16&&i<19))continue;const next=(i+1)%N;const a=angle[i],b=i===N-1?angle[0]+TWO:angle[next],p=position(a,t,i),q=position(b,t,next),mid=position((a+b)/2,t+.009*Math.sin(ring*3+i),i);ctx.beginPath();ctx.moveTo(...p);ctx.quadraticCurveTo(...mid,...q);ctx.globalAlpha=.38+(ring%4)*.063;ctx.strokeStyle=silk;ctx.lineWidth=ring%5===0?1.35:.8;ctx.stroke()}}
+ ctx.globalAlpha=1;
+ // Two long original anchor cords continue beyond the woven circle.
+ for(const i of [3,17,25]){const p=position(angle[i],.96,i);ctx.beginPath();ctx.moveTo(...p);ctx.quadraticCurveTo(p[0]+(i===3?95:i===17?-95:60),p[1]+(i===3?-90:i===17?78:120),i===3?1184:i===17?308:1065,i===3?47:i===17?742:758);ctx.strokeStyle='#36516b';ctx.globalAlpha=.35;ctx.lineWidth=1.5;ctx.stroke()}ctx.globalAlpha=1;
+}
+function paintDew(){for(const [j,d] of dew.entries()){
+ const ring=.075+d.ring*.057+d.offset*.043+Math.sin(phase*1.6+d.phase)*Math.min(.024,Math.abs(offset)/120);
+ const p=position(angle[d.spoke],ring,d.spoke),sz=(3.3+d.scale*4)*(1+.07*Math.sin(phase*.45+j));
+ const glow=ctx.createRadialGradient(p[0]-sz*.2,p[1]-sz*.4,0,p[0],p[1],sz*1.42);
+ glow.addColorStop(0,'#fff9e8');glow.addColorStop(.26,'#f3d6a3');glow.addColorStop(.68,'#c27655');glow.addColorStop(1,'#40697b');
+ ctx.beginPath();ctx.ellipse(p[0],p[1]+sz*.28,sz*.84,sz*1.2,Math.sin(angle[d.spoke])*.2,0,TWO);ctx.fillStyle=glow;ctx.globalAlpha=.8;ctx.fill();
+ ctx.beginPath();ctx.arc(p[0]-sz*.21,p[1]-sz*.35,Math.max(1,sz*.2),0,TWO);ctx.fillStyle='#fffef0';ctx.globalAlpha=.82;ctx.fill();}
+ ctx.globalAlpha=1}
+function draw(){if(!ctx)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ const mobile=w<701;const scale=mobile?Math.max(.57,Math.min(.8,w/520)):.92*Math.min(w/1300,h/850)*1.26;
+ ctx.save();if(mobile){ctx.translate(w/2,h*.50);ctx.scale(scale,scale);ctx.translate(-795,-385)}else{ctx.translate(w/2,h/2);ctx.scale(scale,scale);ctx.translate(-600,-400)};
+ // Fine paper registration with a barely legible circle behind the web.
+ ctx.beginPath();ctx.arc(CX,CY,323,0,TWO);ctx.strokeStyle='#bdab99';ctx.globalAlpha=.21;ctx.lineWidth=.8;ctx.stroke();ctx.globalAlpha=1;
+ for(let k=0;k<105;k++){const x=360+(k*131)%830,y=60+(k*79)%655;ctx.fillStyle=k%3?'#715d55':'#a45f44';ctx.globalAlpha=.11;ctx.fillRect(x,y,1.1,1.1)}ctx.globalAlpha=1;
+ web();paintDew();ctx.restore()}
+function loop(t){raf=0;const dt=Math.min(2,(t-frameTime)/16.67||1);frameTime=t;phase+=dt*.028;velocity+=(-offset*.017-velocity*.12)*dt;offset+=velocity*dt;
+ for(const d of dew)d.slip*=Math.pow(.92,dt);if(Math.abs(offset)<.06&&Math.abs(velocity)<.025){offset=velocity=0;alive=false}else alive=true;draw();if(alive)request();else announce()}
+function request(){if(!raf)raf=requestAnimationFrame(loop)}
+function breeze(force){if(motion){offset=Math.max(-62,Math.min(62,offset+force));velocity=0;draw()}else{velocity=Math.max(-11,Math.min(11,velocity+force*.18));alive=true;request()}announce()}
+function announce(){const state=(Math.abs(offset)+Math.abs(velocity)*4>3)?'IN MOTION':'STILL';status.textContent='FORTY-EIGHT DROPLETS / '+state}
+function settle(){velocity=0;offset=0;phase=0;alive=false;if(raf)cancelAnimationFrame(raf);raf=0;draw();announce()}
+function pointerPosition(e){const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
+canvas.addEventListener('pointerdown',e=>{drag=true;[lastX,lastY]=pointerPosition(e);canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;const [x,y]=pointerPosition(e),dx=x-lastX,dy=y-lastY;lastX=x;lastY=y;if(Math.abs(dx)+Math.abs(dy)>1)breeze(Math.max(-12,Math.min(12,dx*.42+dy*.08)))});
+canvas.addEventListener('pointerup',e=>{if(drag){drag=false;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(Math.abs(velocity)<.05)breeze(17)}});
+canvas.addEventListener('pointercancel',()=>{drag=false});
+document.getElementById('breeze').addEventListener('click',()=>breeze(31));document.getElementById('settle').addEventListener('click',settle);
+document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||e.target.tagName==='BUTTON'&&[' ','Enter'].includes(e.key))return;const k=e.key.toLowerCase();if(k==='b')breeze(31);if(k==='r')settle()});
+addEventListener('resize',fit);fit();announce();
+})();
+</script></body></html>
