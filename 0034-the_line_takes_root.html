@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUTOART 0034 — The Line Takes Root</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#f0dfb6;color:#142c37}body{font-family:Georgia,'Times New Roman',serif}
+main{position:relative;width:100%;min-height:690px;height:100svh;overflow:hidden;background:#f0dfb6}
+svg{position:absolute;inset:0;width:100%;height:100%;touch-action:manipulation;display:block}
+#mobile-cord{display:none}#dial-holes .hole{cursor:pointer;outline:none}#dial-holes .hole:hover .well,#dial-holes .hole:focus-visible .well{stroke:#f9e9a5;stroke-width:5}#dial-holes .hole:focus-visible .hole-number{fill:#fff5c3}#dial-disc{transform-origin:464px 363px;transition:transform .55s cubic-bezier(.17,.89,.24,1.1)}
+#dial-disc.turn{transform:rotate(19deg)}.stem{fill:none;stroke:#133f56;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-dashoffset 1100ms cubic-bezier(.18,.68,.32,1)}.twig{fill:none;stroke:#1e6271;stroke-width:3;stroke-linecap:round}.leaf{opacity:0;transition:opacity 750ms ease-out}.leaf.shown{opacity:1}
+.metadata{position:absolute;z-index:2;top:clamp(14px,3vw,42px);left:clamp(14px,4vw,60px);font:700 11px/1.6 ui-monospace,Consolas,monospace;letter-spacing:.18em;color:#284b59}
+.sidecopy{position:absolute;z-index:2;right:clamp(20px,5vw,75px);top:clamp(42px,8vw,116px);max-width:260px;text-align:right;pointer-events:none}
+.sidecopy h1{font:normal clamp(30px,3.65vw,58px)/.96 Georgia,serif;letter-spacing:-.045em;margin:0;color:#103c4c}.sidecopy p{font:12px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.08em;max-width:210px;margin:18px 0 0 auto;color:#345b67}
+.panel{position:absolute;z-index:3;left:clamp(14px,4vw,60px);right:clamp(14px,4vw,60px);bottom:clamp(14px,3.5vw,42px);display:flex;justify-content:space-between;align-items:end;gap:18px;pointer-events:none}.panel>*{pointer-events:auto}
+.status{background:#f0dfb6eb;padding:8px 10px;margin-left:-10px;max-width:460px;font:700 12px/1.4 ui-monospace,Consolas,monospace;letter-spacing:.095em;color:#133f56}.hint{display:block;margin-top:4px;font-weight:400;font-size:10px;letter-spacing:.04em}
+button#clear{min-height:44px;border:2px solid #16465a;background:#f5e7c8;color:#16465a;font:700 12px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.12em;padding:12px 16px;cursor:pointer}
+button#clear:hover,button#clear:focus-visible{outline:3px solid #d14e30;outline-offset:3px;background:#17485d;color:#f8e3b4}
+@media(max-width:700px){#plant-base{display:none}#mobile-cord{display:block} main{min-height:660px;height:100svh}.sidecopy{top:65px;right:17px;max-width:174px}.sidecopy h1{font-size:29px;line-height:1.02}.sidecopy p{display:none}.metadata{top:14px;left:16px;font-size:10px}.panel{bottom:13px;left:13px;right:13px;align-items:end}.status{font-size:10px;max-width:210px}.hint{font-size:9px}button#clear{font-size:10px;padding:10px;min-height:42px}}
+@media(prefers-reduced-motion:reduce){#dial-disc,.stem,.leaf{transition:none!important}}
+</style>
+</head>
+<body>
+<main aria-label="A vermilion wall telephone on yellow paper. Each number makes its cobalt cord put out another botanical branch.">
+<svg id="art" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Large red rotary telephone on a warm yellow wall. Its dark blue cable grows into branching leaves on the right as numbers are dialled.">
+<defs>
+ <pattern id="paper" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="3" cy="5" r=".7" fill="#b9a36f" opacity=".24"/><circle cx="20" cy="24" r=".6" fill="#b29b62" opacity=".23"/><path d="M9 16l2 1M25 3l1 2" stroke="#dbc48a" stroke-width=".8" opacity=".55"/></pattern>
+ <linearGradient id="case" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f07b4e"/><stop offset=".4" stop-color="#dc5737"/><stop offset="1" stop-color="#a92d2b"/></linearGradient>
+ <linearGradient id="handset" x1="0" y1="0" x2="0.2" y2="1"><stop stop-color="#f2c876"/><stop offset=".55" stop-color="#db9b52"/><stop offset="1" stop-color="#9a5034"/></linearGradient>
+ <radialGradient id="dialface"><stop stop-color="#fff1c7"/><stop offset=".76" stop-color="#d8aa6d"/><stop offset="1" stop-color="#7d4d36"/></radialGradient>
+ <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff6d8" stop-opacity=".9"/><stop offset="1" stop-color="#f4d8a4" stop-opacity=".12"/></linearGradient>
+</defs>
+<rect width="1200" height="800" fill="#f1deb1"/><rect width="1200" height="800" fill="url(#paper)"/>
+<path d="M0 664 Q392 574 734 676T1200 643V800H0Z" fill="#e4ce97" opacity=".55"/>
+<path d="M0 673 C360 600 744 710 1200 637" fill="none" stroke="#aa9670" stroke-width="2" opacity=".55"/>
+<g opacity=".45" stroke="#b9a275" fill="none"><path d="M35 155H210M35 163H160M920 726h234M932 734h189"/><circle cx="817" cy="411" r="273" stroke-dasharray="2 19"/><path d="M820 138v-50M1093 412h60M820 684v61"/></g>
+<g id="plant-base">
+ <path d="M491 574 C513 628 601 625 621 577 C648 510 560 502 566 568 C574 627 686 671 737 590 C754 565 767 562 780 575" fill="none" stroke="#163a50" stroke-width="23" stroke-linecap="round"/>
+ <path d="M493 571 C523 615 606 617 614 571 C626 518 567 521 578 570 C587 618 675 661 731 588 C746 568 762 564 782 578" fill="none" stroke="#77a2a0" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+ <path d="M769 571 Q803 540 822 510" fill="none" stroke="#133f56" stroke-width="10" stroke-linecap="round"/>
+ <path d="M820 512Q812 467 834 441 Q867 436 870 466 Q855 485 820 512Z" fill="#437f7e" stroke="#194759" stroke-width="3"/>
+ <path d="M820 512Q845 474 860 454" fill="none" stroke="#c9d6ae" stroke-width="2"/>
+</g>
+<path id="mobile-cord" d="M510 579 C690 655 500 732 414 822 C372 867 328 884 302 918" fill="none" stroke="#153f55" stroke-width="17" stroke-linecap="round"/><g id="growth" aria-hidden="true"></g>
+<!-- Phone shadow and crimson enamel body, painted as one oversized object rather than UI chrome. -->
+<path d="M274 226 Q280 201 327 201H604Q650 207 655 247L670 567Q670 609 626 625H306Q266 610 262 563Z" fill="#64533e" opacity=".23" transform="translate(14 16)"/>
+<path d="M267 227Q270 194 312 188H608Q660 198 666 237L683 567Q682 609 635 621H300Q252 612 250 570Z" fill="#622f32" stroke="#712e2c" stroke-width="8"/>
+<path d="M279 223Q286 203 315 202H606Q641 206 648 241L665 556Q669 590 628 604H309Q273 602 267 561Z" fill="url(#case)" stroke="#a23f35" stroke-width="4"/>
+<path d="M291 242 Q430 226 631 245L639 291Q465 275 283 293Z" fill="#fba57a" opacity=".31"/>
+<path d="M289 564Q458 586 638 567" fill="none" stroke="#ffbd83" stroke-width="5" opacity=".55"/>
+<rect x="342" y="211" width="251" height="66" rx="17" fill="#692b2f"/><rect x="348" y="213" width="239" height="50" rx="12" fill="#a85240"/>
+<g id="receiver">
+ <path d="M302 164 C304 104 339 90 386 104 Q459 122 542 104 C590 86 623 107 628 165 L611 192 Q572 196 553 158 Q472 140 381 157 Q359 197 318 195Z" fill="#7a3d34" transform="translate(6 10)" opacity=".35"/>
+ <path d="M300 162 C303 106 340 90 383 105 Q454 126 540 103 C585 88 624 107 627 162 L606 191 Q570 193 551 157 Q463 140 379 155 Q360 195 319 190Z" fill="url(#handset)" stroke="#673b35" stroke-width="8"/>
+ <path d="M319 144 Q326 114 359 118M571 118Q601 114 606 148" fill="none" stroke="#ffecb1" stroke-width="9" stroke-linecap="round" opacity=".6"/>
+ <path d="M344 151l-3 24M354 150l-3 23M590 150l3 24M600 152l3 21" stroke="#6a483d" stroke-width="2.5"/>
+</g>
+<circle cx="464" cy="363" r="143" fill="#8d3634" stroke="#682b2c" stroke-width="8"/>
+<circle cx="464" cy="363" r="125" fill="#c88d61" stroke="#ffcd8b" stroke-width="4"/>
+<g id="dial-disc">
+<circle cx="464" cy="363" r="117" fill="url(#dialface)" stroke="#714736" stroke-width="4"/>
+<circle cx="464" cy="363" r="104" fill="none" stroke="#fff3ce" stroke-width="3" opacity=".8"/>
+<g id="dial-holes"></g>
+<circle cx="464" cy="363" r="49" fill="#9a4538" stroke="#5c3030" stroke-width="4"/>
+<circle cx="464" cy="363" r="43" fill="#fff0c7" stroke="#b88562" stroke-width="3"/>
+<path d="M438 357 Q464 339 491 352 M440 372 Q466 390 490 372" fill="none" stroke="#e5b989" stroke-width="3"/>
+<text x="464" y="360" text-anchor="middle" fill="#5c3b38" font-size="12" font-family="Georgia,serif" font-style="italic">LOCAL</text>
+<text x="464" y="375" text-anchor="middle" fill="#5c3b38" font-size="12" font-family="Georgia,serif" font-style="italic">CALL</text>
+</g>
+<path d="M540 452Q590 464 589 421" fill="none" stroke="#f8d9a0" stroke-width="13" stroke-linecap="round" opacity=".75"/>
+<path d="M534 457Q583 467 583 427" fill="none" stroke="#8e3431" stroke-width="8" stroke-linecap="round"/>
+<circle cx="607" cy="538" r="23" fill="#a64235" stroke="#f1aa75" stroke-width="4"/><circle cx="607" cy="538" r="10" fill="#642d32"/>
+<text x="465" y="546" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="12" letter-spacing="3" fill="#ffe1ae">NO EXCHANGE</text>
+<path d="M258 654H694" stroke="#18485c" stroke-width="3" opacity=".7"/>
+<text x="277" y="680" font-family="ui-monospace,Consolas,monospace" font-size="11" letter-spacing="2" fill="#21485b">AN INSTRUMENT OF STAYING</text>
+<g id="tokens" aria-hidden="true"></g>
+</svg>
+<div class="metadata">AUTOART / 0034&nbsp;&nbsp; • &nbsp;&nbsp;NO NETWORK</div>
+<div class="sidecopy"><h1>The Line<br>Takes Root</h1><p>Dial a number. The call goes nowhere. The line stays here.</p></div>
+<div class="panel"><div class="status" id="status" role="status" aria-live="polite">ONE ROOT / BEFORE THE CALL<span class="hint">Click the number wells · 0–9 on keyboard · Up to eight branches</span></div><button id="clear" type="button">HANG UP / REWIND</button></div>
+</main>
+<script>
+(()=>{'use strict';
+const svgNS='http://www.w3.org/2000/svg', dial=document.getElementById('dial-holes'), disc=document.getElementById('dial-disc'),growth=document.getElementById('growth'),tokens=document.getElementById('tokens'),status=document.getElementById('status');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;const LIMIT=8;
+const targets=[[1125,607],[925,257],[1106,305],[990,129],[1154,435],[845,170],[1070,685],[897,622],[1185,200],[1025,489]];
+let history=[],pending=0;
+function element(tag,attr,parent){const e=document.createElementNS(svgNS,tag);for(const [k,v] of Object.entries(attr))e.setAttribute(k,String(v));parent.appendChild(e);return e;}
+function holes(){for(let i=0;i<10;i++){const digit=(i+1)%10,angle=(-144+i*32.2)*Math.PI/180,x=464+85*Math.cos(angle),y=363+85*Math.sin(angle);const g=element('g',{class:'hole',tabindex:'0',role:'button','aria-label':'Dial '+digit,'data-digit':digit},dial);element('circle',{class:'well',cx:x,cy:y,r:29,fill:'#73372f',stroke:'#d8a875','stroke-width':3},g);element('circle',{cx:x,cy:y,r:24,fill:'#3c3538'},g);const t=element('text',{class:'hole-number',x,y:y+9,'text-anchor':'middle','font-family':'Georgia,serif','font-size':26,fill:'#f5d6a0','pointer-events':'none'},g);t.textContent=String(digit);g.addEventListener('click',()=>add(digit));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();add(digit)}})}}
+function leaf(g,x,y,angle,scale,color){const a=angle,nx=Math.cos(a),ny=Math.sin(a),px=-ny,py=nx,len=scale*31,w=scale*13;const tipX=x+nx*len,tipY=y+ny*len;const path=`M${x.toFixed(1)} ${y.toFixed(1)} Q${(x+nx*len*.45+px*w).toFixed(1)} ${(y+ny*len*.45+py*w).toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)} Q${(x+nx*len*.55-px*w).toFixed(1)} ${(y+ny*len*.55-py*w).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}Z`;element('path',{d:path,fill:color,stroke:'#214e59','stroke-width':1.8},g);element('path',{d:`M${x} ${y}L${tipX} ${tipY}`,fill:'none',stroke:'#e5d99d','stroke-width':1.1,opacity:.75},g)}
+function add(digit){if(history.length>=LIMIT){status.firstChild.textContent='THE CORD IS FULL / HANG UP TO BEGIN AGAIN';return}const serial=history.length,overlap=history.filter(v=>v===digit).length;history.push(digit);const end=targets[digit],start=[778,574],m=serial*13+overlap*18,ex=end[0]-overlap*14+(serial%2?9:-4),ey=end[1]+overlap*19-serial*2;
+ const group=element('g',{'data-branch':serial},growth);
+ // Every line shares one plug; its bends and sprigs are distinct physical marks.
+ const bend=(digit%2?-1:1)*(42+serial*5), c1=[808+serial*4,500-bend*.3],c2=[Math.max(825,ex-175),ey+bend];
+ const d=`M${start[0]} ${start[1]} C${c1[0]} ${c1[1]} ${c2[0]} ${c2[1]} ${ex} ${ey}`;
+ const path=element('path',{d,class:'stem','stroke-width':Math.max(5,9-serial*.45)},group);
+ const length=path.getTotalLength();path.style.strokeDasharray=String(length);path.style.strokeDashoffset=reduced?'0':String(length);
+ const leaves=element('g',{class:'leaf'},group);for(let j=0;j<4;j++){const t=.43+j*.16,pt=path.getPointAtLength(length*t),next=path.getPointAtLength(Math.min(length,length*t+3));const theta=Math.atan2(next.y-pt.y,next.x-pt.x)+(j%2?1:-1)*(1.03+.08*digit);const sz=(.66+(digit+j)%4*.12);leaf(leaves,pt.x,pt.y,theta,sz,(digit+j)%3===0?'#d6a347':(j%2?'#6a9b86':'#367879'));}
+ element('circle',{cx:ex,cy:ey,r:5,fill:'#d05b3b',stroke:'#f4dc9c','stroke-width':2},group);
+ const label=element('text',{x:ex+12,y:ey+6,'font-family':'ui-monospace,monospace','font-size':12,fill:'#123d51','letter-spacing':2},group);label.textContent=String(digit).padStart(2,'0');
+ if(reduced){leaves.classList.add('shown')}else{requestAnimationFrame(()=>{path.style.strokeDashoffset='0';leaves.classList.add('shown')})}
+ disc.classList.remove('turn');void disc.getBoundingClientRect().width;disc.classList.add('turn');if(pending)clearTimeout(pending);pending=setTimeout(()=>disc.classList.remove('turn'),200);
+ status.firstChild.textContent=`${history.length} / ${LIMIT} CALLS · ${history.join('—')} · NO ONE ANSWERS`;
+}
+function clear(){history=[];growth.replaceChildren();disc.classList.remove('turn');if(pending)clearTimeout(pending);pending=0;status.firstChild.textContent='ONE ROOT / BEFORE THE CALL'}
+document.addEventListener('keydown',e=>{if(e.ctrlKey||e.altKey||e.metaKey||['INPUT','TEXTAREA'].includes(e.target.tagName))return;if(e.target.closest?.('[role="button"]')&&(e.key===' '||e.key==='Enter'))return;if(/^[0-9]$/.test(e.key)){e.preventDefault();add(Number(e.key))}else if(e.key.toLowerCase()==='r'||e.key==='Escape'){e.preventDefault();clear()}});
+function layout(){const mobile=innerWidth<=700;document.getElementById('art').setAttribute('viewBox',mobile?'155 -100 715 1370':'0 0 1200 800');growth.setAttribute('transform',mobile?'translate(-305 470) scale(.78)':'')}
+window.addEventListener('resize',layout);document.getElementById('clear').addEventListener('click',clear);holes();layout();
+})();
+</script>
+</body>
+</html>
